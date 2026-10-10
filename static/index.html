@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CodeSense — AI-Powered Interactive Coding & Debugging Platform</title>
+  
+  <!-- Google Fonts: Inter & Fira Code -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/visualizer.css">
+</head>
+<body>
+
+  <!-- Floating Background Glow Orbs for Glassmorphism Depth -->
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="app-header">
+    <div class="brand-wrapper" onclick="App.showTopicsView()">
+      <div class="brand-icon">
+        <i class="fa-solid fa-brain"></i>
+      </div>
+      <div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h1 class="brand-title">CodeSense</h1>
+          <span class="brand-badge">Practice Platform</span>
+        </div>
+        <p style="font-size: 0.72rem; color: var(--text-dim); margin-top: -2px;">Interactive Coding Platform — Learn & Think Like a Programmer</p>
+      </div>
+    </div>
+
+      <!-- Practice Your Own Question Nav Button -->
+      <button class="btn-primary" style="padding: 6px 14px; font-size: 0.8rem; background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);" onclick="App.openCustomPracticeView()" title="Type in your own question to practice">
+        <i class="fa-solid fa-pen-to-square"></i> Practice Your Own Question
+      </button>
+
+      <!-- Language Switcher -->
+      <div class="lang-toggle-group">
+        <button class="lang-btn active" id="langTogglePy">
+          <i class="fa-brands fa-python" style="color: #38bdf8;"></i> Python
+        </button>
+        <button class="lang-btn" id="langToggleJava">
+          <i class="fa-brands fa-java" style="color: #f97316;"></i> Java
+        </button>
+      </div>
+
+      <!-- Streak Pill -->
+      <div class="stat-pill" title="Daily Debugging Streak">
+        <i class="fa-solid fa-fire"></i>
+        <span><strong id="userStreak">1</strong> Day Streak</span>
+      </div>
+
+      <!-- Independence Score Pill -->
+      <div class="stat-pill independence" title="Independence Score: Measures how well you solve without unlocking hints!">
+        <i class="fa-solid fa-seedling"></i>
+        <span>Independence: <strong id="independenceScore">95%</strong></span>
+      </div>
+
+      <!-- Analytics Button -->
+      <button class="btn-icon" id="btnAnalytics" title="Learner Profile & Error Radar Analytics">
+        <i class="fa-solid fa-chart-pie"></i>
+      </button>
+
+      <!-- Groq Settings Button -->
+      <button class="btn-icon" id="btnSettings" title="AI Settings & Groq API Key">
+        <i class="fa-solid fa-sliders"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ========================================================
+       SCREEN 1: TOPIC HUB (INITIAL HOME PAGE)
+       ======================================================== -->
+  <div class="app-view active" id="view-topics">
+    <div class="topics-hero">
+      <h2>Interactive Coding Practice & Intelligent AI Tutor</h2>
+      <p>Practice core computer science and algorithmic programming challenges from beginner to advanced. If your solution encounters a bug, CodeSense gives simple clues, explains what went wrong in plain English, and visualizes your program state!</p>
+    </div>
+
+    <!-- Grid of 10 Topics -->
+    <div class="topics-grid" id="topicsGridContainer">
+      <!-- Dynamically populated by app.js -->
+    </div>
+
+    <!-- Custom Practice Studio Callout Card -->
+    <div style="max-width: 1300px; margin: 24px auto 0; width: 100%;">
+      <div class="glass-panel" style="padding: 22px 28px; border: 1px solid rgba(56, 189, 248, 0.35); background: linear-gradient(135deg, rgba(15, 23, 42, 0.85) 0%, rgba(30, 41, 59, 0.75) 100%);">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 18px;">
+            <div class="topic-icon-box" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; font-size: 1.5rem; width: 50px; height: 50px;">
+              <i class="fa-solid fa-pen-ruler"></i>
+            </div>
+            <div>
+              <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                <h3 style="font-size: 1.15rem; color: #ffffff; font-weight: 700;">Practice Your Own Question Studio</h3>
+                <span class="brand-badge" style="background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: rgba(56, 189, 248, 0.4);">New Feature</span>
+              </div>
+              <p style="font-size: 0.85rem; color: #94a3b8; max-width: 720px; line-height: 1.5;">
+                Have a coding question from your studies, coursework, or online practice? Type your question, code your solution, compile & test, and let CodeSense detect logic flaws, provide 3-tier progressive clues, and explain errors in plain English!
+              </p>
+            </div>
+          </div>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <button class="btn-secondary" onclick="App.openCustomPracticeView('prime')" style="border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Try Prime Check Sample
+            </button>
+            <button class="btn-primary" onclick="App.openCustomPracticeView()">
+              <i class="fa-solid fa-pen-to-square"></i> Open Practice Studio
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SCREEN 2: TOPIC QUESTIONS (10 PROGRESSIVE LEVELS)
+       ======================================================== -->
+  <div class="app-view" id="view-questions">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-bar">
+      <button class="breadcrumb-btn" onclick="App.showTopicsView()">
+        <i class="fa-solid fa-arrow-left"></i> All Topics
+      </button>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current" id="topicBreadcrumbTitle">Topic Name</span>
+    </div>
+
+    <!-- Topic Header Banner -->
+    <div class="topic-banner-header">
+      <div class="banner-left">
+        <div class="banner-icon" id="topicBannerIcon">
+          <i class="fa-solid fa-layer-group"></i>
+        </div>
+        <div>
+          <h2 class="banner-title" id="topicBannerTitle">Topic Title</h2>
+          <p class="banner-subtitle" id="topicBannerDesc">10 Progressive Challenges from Beginner to Advanced Mastery</p>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <span class="brand-badge" style="background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3);">
+          10 Challenges (Level 1 → 10)
+        </span>
+      </div>
+    </div>
+
+    <!-- 10 Questions Cards -->
+    <div class="questions-container" id="questionsTrackContainer">
+      <!-- Dynamically populated by app.js -->
+    </div>
+  </div>
+
+  <!-- ========================================================
+       SCREEN 3: THE DEBUGGING WORKBENCH
+       ======================================================== -->
+  <div class="app-view" id="view-workbench">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-bar">
+      <button class="breadcrumb-btn" onclick="App.backToCurrentTopicQuestions()">
+        <i class="fa-solid fa-arrow-left"></i> <span id="workbenchTopicBackText">Back to Questions</span>
+      </button>
+      <span class="breadcrumb-sep">/</span>
+      <span class="breadcrumb-current" id="workbenchBreadcrumbTitle">Level 1: Challenge</span>
+    </div>
+
+    <!-- Split Workspace -->
+    <main class="workspace-main">
+
+      <!-- Left Pane: Code Editor -->
+      <section class="editor-pane">
+        <div class="pane-header">
+          <div class="pane-title-group">
+            <span class="pane-title">
+              <i class="fa-solid fa-code" style="color: var(--accent-cyan);"></i>
+              <span id="editorTitle">Loading Challenge...</span>
+            </span>
+            <span class="scenario-tag" id="scenarioTag">Practice Scenario</span>
+          </div>
+
+          <div class="pane-actions">
+            <button class="btn-secondary" id="btnResetCode" title="Reset to clean problem starter">
+              <i class="fa-solid fa-arrow-rotate-left"></i> Reset Template
+            </button>
+            <button class="btn-secondary" id="btnClearCode" title="Clear editor to write freely">
+              <i class="fa-solid fa-trash-can"></i> Clear Canvas
+            </button>
+          </div>
+        </div>
+
+        <!-- Mode A: Curriculum Scenario Context Brief -->
+        <div id="curriculumContextBrief" style="padding: 12px 18px; background: rgba(0, 0, 0, 0.25); border-bottom: 1px solid var(--glass-border); font-size: 0.84rem; line-height: 1.45;">
+          <div id="scenarioDescription" style="color: #cbd5e1; margin-bottom: 6px;">
+            Loading scenario context...
+          </div>
+          <div style="font-family: var(--font-mono); font-size: 0.78rem; color: #38bdf8;">
+            Expected Goal: <span id="expectedOutputText" style="color: #67e8f9;">...</span>
+          </div>
+        </div>
+
+        <!-- Mode B: Practice Your Own Question Studio (Editable Question Space) -->
+        <div id="customQuestionBox" class="custom-question-card" style="display: none;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="brand-badge" style="background: rgba(56, 189, 248, 0.18); color: #38bdf8; border-color: rgba(56, 189, 248, 0.35);">
+                <i class="fa-solid fa-pen-to-square"></i> Custom Practice Question
+              </span>
+              <span style="font-size: 0.78rem; color: #94a3b8;">Type your question details below:</span>
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+              <span style="font-size: 0.74rem; color: #64748b; margin-right: 2px;">Load Sample:</span>
+              <button class="btn-pill-sample" onclick="App.loadSampleCustomQuestion('prime')">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Prime Check
+              </button>
+              <button class="btn-pill-sample" onclick="App.loadSampleCustomQuestion('vowels')">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Count Vowels
+              </button>
+              <button class="btn-pill-sample" onclick="App.loadSampleCustomQuestion('second_largest')">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> 2nd Largest
+              </button>
+              <button class="btn-pill-clear" onclick="App.clearCustomQuestionForm()">
+                <i class="fa-solid fa-eraser"></i> Clear
+              </button>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 10px;">
+            <div>
+              <label class="custom-field-label">Question Title:</label>
+              <input type="text" id="customInputTitle" class="custom-input" placeholder="e.g. Check if a Number is Prime" spellcheck="false">
+            </div>
+            <div>
+              <label class="custom-field-label">Target / Expected Output (Optional):</label>
+              <input type="text" id="customInputExpected" class="custom-input" placeholder="e.g. 29 is Prime: True" spellcheck="false">
+            </div>
+          </div>
+
+          <div>
+            <label class="custom-field-label">Question Statement / Problem Description:</label>
+            <textarea id="customInputDesc" class="custom-textarea" rows="2" placeholder="Type problem statement here: e.g. Given an integer N, determine whether N is a prime number (divisible only by 1 and itself)..." spellcheck="false"></textarea>
+          </div>
+        </div>
+
+        <!-- Code Editor Area -->
+        <div class="editor-wrapper">
+          <div class="editor-textarea-container">
+            <div class="editor-gutter" id="editorGutter">1</div>
+            <textarea class="editor-textarea" id="codeEditor" spellcheck="false" placeholder="Type your solution code here... (Copy-paste disabled to build coding muscle memory)" onpaste="return false;" ondrop="return false;"></textarea>
+          </div>
+        </div>
+
+        <!-- Editor Footer Actions -->
+        <div class="editor-footer">
+          <span style="font-size: 0.75rem; color: var(--text-dim);">
+            <i class="fa-solid fa-shield-halved"></i> Sandboxed Execution (Python 3.14 & Java 17)
+          </span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn-primary" id="btnRunCode">
+              <i class="fa-solid fa-play"></i> Run & Diagnose
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Pane: Diagnostic Suite -->
+      <section class="diagnostic-pane">
+        <!-- Suite Tab Navigation -->
+        <div class="suite-tabs">
+          <button class="suite-tab active" data-tab="diagnostic">
+            <i class="fa-solid fa-stethoscope"></i> Error & Cause
+          </button>
+          <button class="suite-tab" data-tab="visualizer">
+            <i class="fa-solid fa-eye"></i> Visual Bug Explorer
+          </button>
+          <button class="suite-tab" data-tab="hints">
+            <i class="fa-solid fa-lightbulb"></i> Easy Clues
+            <span class="tab-badge">3 Tiers</span>
+          </button>
+          <button class="suite-tab" data-tab="transfer">
+            <i class="fa-solid fa-medal"></i> Transfer Practice
+          </button>
+        </div>
+
+        <!-- Suite Tab Contents -->
+        <div class="suite-content">
+
+          <!-- 1. Error Diagnostic Tab -->
+          <div class="tab-panel active" id="tab-diagnostic">
+            <div id="errorBannerContainer">
+              <div class="error-banner" style="background: rgba(255,255,255,0.03); border-color: rgba(255,255,255,0.08);">
+                <div class="error-icon" style="color: var(--text-dim);"><i class="fa-solid fa-code"></i></div>
+                <div class="error-meta">
+                  <div class="error-type-title" style="color: var(--text-main);">Ready to Run</div>
+                  <div class="error-desc">Click 'Run & Diagnose' to execute the code and identify the bug.</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Simplified Friendly 3-Way Comparative Breakdown -->
+            <div id="causeBreakdownContainer">
+              <!-- Rendered dynamically -->
+            </div>
+
+            <!-- Console Output -->
+            <div style="margin-top: 10px;">
+              <div style="font-size: 0.75rem; color: var(--text-dim); font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">
+                <i class="fa-solid fa-terminal"></i> Execution Console
+              </div>
+              <pre class="terminal-box" id="consoleOutput">Console output will appear here...</pre>
+            </div>
+          </div>
+
+          <!-- 2. Visual Bug Explorer Tab -->
+          <div class="tab-panel" id="tab-visualizer">
+            <div id="visualizerContainer">
+              <!-- Rendered dynamically by VisualizerEngine -->
+            </div>
+          </div>
+
+          <!-- 3. Graduated Hints Tab -->
+          <div class="tab-panel" id="tab-hints">
+            <div class="hints-container" id="hintsContainer">
+              <!-- Rendered dynamically by HintManager -->
+            </div>
+          </div>
+
+          <!-- 4. Transfer Practice Tab -->
+          <div class="tab-panel" id="tab-transfer">
+            <div id="transferChallengeContainer">
+              <div style="text-align: center; padding: 40px 20px; color: var(--text-dim);">
+                <i class="fa-solid fa-lock" style="font-size: 2.2rem; margin-bottom: 14px; opacity: 0.5;"></i>
+                <h3 style="font-size: 1.05rem; color: var(--text-main); margin-bottom: 6px;">Transfer Challenge Locked</h3>
+                <p style="font-size: 0.84rem; max-width: 360px; margin: 0 auto;">
+                  Fix the bug in the current problem first! Once conquered, CodeSense unlocks a related practice challenge to verify your real conceptual understanding.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Comprehensive Learner Analytics & Mastery Modal -->
+  <div class="modal-overlay" id="analyticsModal">
+    <div class="glass-panel modal-content" style="max-width: 780px; width: 92%; max-height: 88vh; overflow-y: auto;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="brand-icon" style="width: 36px; height: 36px; font-size: 1.1rem; background: rgba(56, 189, 248, 0.2); color: #38bdf8;">
+            <i class="fa-solid fa-chart-line"></i>
+          </div>
+          <div>
+            <h2 class="modal-title" style="font-size: 1.15rem; margin-bottom: 2px;">Learner Mastery & Practice Analytics</h2>
+            <p style="font-size: 0.74rem; color: var(--text-dim);">Real-time tracking of problem accuracy, independence, and bug patterns</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="brand-badge" id="analyticsTierBadge" style="background: rgba(16, 185, 129, 0.2); color: #34d399; border-color: rgba(16, 185, 129, 0.4);">
+            Autonomous Coder 🏆
+          </span>
+          <button class="modal-close" onclick="App.closeAnalyticsModal()">&times;</button>
+        </div>
+      </div>
+
+      <!-- 5 Key Metric Cards -->
+      <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 18px;">
+        <div class="cause-card" style="align-items: center; text-align: center; padding: 10px 6px;">
+          <span style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">SOLVED</span>
+          <strong style="font-size: 1.25rem; color: #34d399;" id="metricSolved">0</strong>
+          <span style="font-size: 0.68rem; color: var(--text-muted);">Challenges</span>
+        </div>
+        <div class="cause-card" style="align-items: center; text-align: center; padding: 10px 6px;">
+          <span style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">CODE RUNS</span>
+          <strong style="font-size: 1.25rem; color: #38bdf8;" id="metricAttempts">0</strong>
+          <span style="font-size: 0.68rem; color: var(--text-muted);">Attempts</span>
+        </div>
+        <div class="cause-card" style="align-items: center; text-align: center; padding: 10px 6px;">
+          <span style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">ACCURACY</span>
+          <strong style="font-size: 1.25rem; color: #fbbf24;" id="metricAccuracy">100%</strong>
+          <span style="font-size: 0.68rem; color: var(--text-muted);">Success Rate</span>
+        </div>
+        <div class="cause-card" style="align-items: center; text-align: center; padding: 10px 6px;">
+          <span style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">INDEPENDENCE</span>
+          <strong style="font-size: 1.25rem; color: #c084fc;" id="metricIndependence">95%</strong>
+          <span style="font-size: 0.68rem; color: var(--text-muted);">Autonomy</span>
+        </div>
+        <div class="cause-card" style="align-items: center; text-align: center; padding: 10px 6px;">
+          <span style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">STREAK</span>
+          <strong style="font-size: 1.25rem; color: #f43f5e;" id="metricStreak">1 Day</strong>
+          <span style="font-size: 0.68rem; color: var(--text-muted);">Daily Practice</span>
+        </div>
+      </div>
+
+      <!-- 2-Column Section: Insights & Bug Radar -->
+      <div style="display: grid; grid-template-columns: 1fr 1.2fr; gap: 14px; margin-bottom: 18px;">
+        <!-- Left: Language Breakdown & Focus -->
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px 14px;">
+            <div style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-code" style="color: #38bdf8;"></i> Language Mastery
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px;">
+              <span><i class="fa-brands fa-python" style="color: #38bdf8;"></i> Python Solved:</span>
+              <strong id="metricPySolved" style="color: #38bdf8;">0</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 8px;">
+              <span><i class="fa-brands fa-java" style="color: #f97316;"></i> Java Solved:</span>
+              <strong id="metricJavaSolved" style="color: #f97316;">0</strong>
+            </div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-dim);">
+              <span>Clean Wins (0 Clues):</span>
+              <strong id="metricNoHintsSolved" style="color: #34d399;">0</strong>
+            </div>
+          </div>
+
+          <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 12px 14px;">
+            <div style="font-size: 0.82rem; font-weight: 700; color: #38bdf8; margin-bottom: 6px; display: flex; align-items: center; gap: 6px;">
+              <i class="fa-solid fa-compass"></i> Recommended Practice Focus
+            </div>
+            <p id="analyticsRecommendation" style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.45; margin: 0;">
+              Keep practicing progressive problems to build autonomous algorithmic problem-solving habits!
+            </p>
+          </div>
+        </div>
+
+        <!-- Right: Bug Vulnerability Radar -->
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px 14px;">
+          <div style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between;">
+            <span><i class="fa-solid fa-radar" style="color: var(--accent-rose); margin-right: 6px;"></i> Bug Vulnerability Radar</span>
+            <span style="font-size: 0.7rem; color: var(--text-dim);">Mistake Frequency</span>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 10px;">
+            Identifies repeated logic, syntax, and boundary slips so you can master them.
+          </p>
+          <div id="errorRadarList" style="display: flex; flex-direction: column; gap: 6px;">
+            <!-- Dynamic radar bars -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Practice Activity Timeline -->
+      <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--glass-border); border-radius: 8px; padding: 12px 14px;">
+        <div style="font-size: 0.82rem; font-weight: 700; color: #e2e8f0; margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">
+          <i class="fa-solid fa-clock-rotate-left" style="color: var(--accent-amber);"></i> Recent Practice Activity
+        </div>
+        <div id="recentActivityList" style="font-size: 0.78rem;">
+          <!-- Dynamically populated recent runs -->
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; display: flex; justify-content: flex-end;">
+        <button class="btn-secondary" onclick="App.closeAnalyticsModal()">Close Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Groq AI Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="glass-panel modal-content">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="brand-icon" style="width: 32px; height: 32px; font-size: 1rem;"><i class="fa-solid fa-bolt"></i></div>
+          <h2 class="modal-title">AI Tutor Configuration</h2>
+        </div>
+        <button class="modal-close" onclick="App.closeSettingsModal()">&times;</button>
+      </div>
+
+      <p style="font-size: 0.84rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+        CodeSense is powered by <strong>Groq Cloud</strong> with ultra-fast LLaMA 3.3 70B for friendly, Socratic debugging hints in plain English.
+      </p>
+
+      <div style="margin-bottom: 16px;">
+        <label style="font-size: 0.8rem; font-weight: 600; color: #cbd5e1;">Groq API Key (Optional):</label>
+        <input type="password" class="text-input" id="inputGroqKey" placeholder="gsk_..." spellcheck="false">
+        <p style="font-size: 0.72rem; color: var(--text-dim); margin-top: 4px;">
+          Leave empty to use built-in curriculum hints and offline expert heuristics.
+        </p>
+      </div>
+
+      <div id="groqStatusMsg" style="font-size: 0.82rem; margin-bottom: 16px; min-height: 20px;"></div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px;">
+        <button class="btn-secondary" onclick="App.closeSettingsModal()">Cancel</button>
+        <button class="btn-primary" onclick="App.saveGroqKey()">
+          <i class="fa-solid fa-check"></i> Save & Test
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Application Scripts -->
+  <script src="/static/js/visualizer.js"></script>
+  <script src="/static/js/hints.js"></script>
+  <script src="/static/js/editor.js"></script>
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
