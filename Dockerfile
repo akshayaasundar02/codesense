@@ -1,10 +1,13 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-bookworm
 
-# Fix Debian slim missing man directory bug & install OpenJDK 17 for Java execution
+# Fix Debian slim missing man directory bug & install default-jdk-headless (OpenJDK 17 on Bookworm)
 RUN mkdir -p /usr/share/man/man1 && \
     apt-get update && \
-    apt-get install -y --no-install-recommends openjdk-17-jdk-headless && \
+    apt-get install -y --no-install-recommends default-jdk-headless && \
     rm -rf /var/lib/apt/lists/*
+
+ENV JAVA_HOME=/usr/lib/jvm/default-java
+ENV PATH=$JAVA_HOME/bin:$PATH
 
 WORKDIR /app
 
