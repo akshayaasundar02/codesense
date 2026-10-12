@@ -7,7 +7,7 @@ TOPICS_DEF = [
         "name": "Arrays & Lists",
         "icon": "fa-layer-group",
         "tagline": "Array reversal, two-sum, palindrome arrays, sliding windows & Kadane's",
-        "description": "Master the most common array placement interview questions asked by Amazon, Google, TCS, and Microsoft.",
+        "description": "Master the most common array practice interview questions asked by Core Algorithm, Core Algorithm, Core Algorithm, and Core Algorithm.",
         "difficulty": "Level 1 to 10",
         "color": "#06b6d4"
     },
@@ -16,7 +16,7 @@ TOPICS_DEF = [
         "name": "Strings & Text Processing",
         "icon": "fa-font",
         "tagline": "Palindromes, anagrams, word reversals, and frequency maps",
-        "description": "Solve essential string placement questions from palindrome checks to anagram grouping and non-repeating characters.",
+        "description": "Solve essential string practice questions from palindrome checks to anagram grouping and non-repeating characters.",
         "difficulty": "Level 1 to 10",
         "color": "#f59e0b"
     },
@@ -34,7 +34,7 @@ TOPICS_DEF = [
         "name": "Math & Number Problems",
         "icon": "fa-calculator",
         "tagline": "Reverse integer, Armstrong number, GCD, and prime checks",
-        "description": "Essential campus placement math and numerical aptitude programming questions.",
+        "description": "Essential campus practice math and numerical aptitude programming questions.",
         "difficulty": "Level 1 to 10",
         "color": "#10b981"
     },
@@ -88,7 +88,7 @@ TOPICS_DEF = [
         "name": "Dynamic Programming",
         "icon": "fa-diagram-project",
         "tagline": "Climbing stairs, coin change, house robber & 0/1 knapsack",
-        "description": "The ultimate placement interview round: state memoization, tabulations, and optimal substructure.",
+        "description": "The ultimate practice interview round: state memoization, tabulations, and optimal substructure.",
         "difficulty": "Level 1 to 10",
         "color": "#f43f5e"
     }

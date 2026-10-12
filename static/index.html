@@ -54,10 +54,10 @@
         </button>
       </div>
 
-      <!-- Streak Pill -->
-      <div class="stat-pill" title="Daily Debugging Streak">
+      <!-- Streak Pill (Increases strictly on solving questions) -->
+      <div class="stat-pill" title="Daily Problem Solving Streak (Increases only when you solve questions!)">
         <i class="fa-solid fa-fire"></i>
-        <span><strong id="userStreak">1</strong> Day Streak</span>
+        <span><strong id="userStreak">0</strong> Day Streak</span>
       </div>
 
       <!-- Independence Score Pill -->
@@ -75,6 +75,27 @@
       <button class="btn-icon" id="btnSettings" title="AI Settings & Groq API Key">
         <i class="fa-solid fa-sliders"></i>
       </button>
+
+      <!-- User Auth Section -->
+      <div id="authNavSection" style="display: flex; align-items: center; gap: 8px;">
+        <div id="loggedOutPill" style="display: flex; align-items: center; gap: 6px;">
+          <button class="btn-secondary" style="padding: 5px 12px; font-size: 0.8rem;" onclick="App.openAuthModal('login')">
+            <i class="fa-solid fa-arrow-right-to-bracket"></i> Log In
+          </button>
+          <button class="btn-primary" style="padding: 5px 12px; font-size: 0.8rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);" onclick="App.openAuthModal('register')">
+            <i class="fa-solid fa-user-plus"></i> Sign Up
+          </button>
+        </div>
+        <div id="loggedInPill" style="display: none; align-items: center; gap: 6px;">
+          <div class="user-auth-pill" onclick="App.openAnalyticsModal()" title="View your account profile & analytics" style="cursor: pointer;">
+            <i class="fa-solid fa-circle-user" style="color: #818cf8;"></i>
+            <span id="navUsername">Student</span>
+          </div>
+          <button class="btn-auth-logout" onclick="App.logout()" title="Log Out">
+            <i class="fa-solid fa-right-from-bracket"></i>
+          </button>
+        </div>
+      </div>
     </div>
   </header>
 
@@ -496,6 +517,71 @@
           <i class="fa-solid fa-check"></i> Save & Test
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- Authentication Modal (Log In & Create Account) -->
+  <div class="modal-overlay" id="authModal">
+    <div class="glass-panel modal-content" style="max-width: 440px; padding: 26px;">
+      <div class="modal-header" style="margin-bottom: 18px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <div class="brand-icon" style="width: 34px; height: 34px; font-size: 1.1rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+            <i class="fa-solid fa-user-lock"></i>
+          </div>
+          <div>
+            <h2 class="modal-title" id="authModalTitle">Welcome to CodeSense</h2>
+            <p style="font-size: 0.72rem; color: var(--text-dim); margin: 0;">Save your progress, streak & practice stats</p>
+          </div>
+        </div>
+        <button class="modal-close" onclick="App.closeAuthModal()">&times;</button>
+      </div>
+
+      <!-- Tab switch: Log In vs Create Account -->
+      <div style="display: flex; background: rgba(15,23,42,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 4px; margin-bottom: 18px;">
+        <button id="authTabLogin" style="flex: 1; padding: 8px; border-radius: 6px; border: none; background: #6366f1; color: white; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;" onclick="App.switchAuthTab('login')">
+          Log In
+        </button>
+        <button id="authTabRegister" style="flex: 1; padding: 8px; border-radius: 6px; border: none; background: transparent; color: #94a3b8; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: all 0.2s;" onclick="App.switchAuthTab('register')">
+          Create Account
+        </button>
+      </div>
+
+      <!-- Form Error / Success Message -->
+      <div id="authStatusMsg" style="display: none; padding: 10px 12px; border-radius: 6px; font-size: 0.8rem; margin-bottom: 14px;"></div>
+
+      <!-- Log In Form -->
+      <form id="loginForm" onsubmit="App.handleLogin(event)">
+        <div style="margin-bottom: 14px;">
+          <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 4px;">Username or Email</label>
+          <input type="text" class="text-input" id="loginIdentifier" placeholder="e.g. akshayaa or student@univ.edu" required spellcheck="false" autocomplete="username">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 4px;">Password</label>
+          <input type="password" class="text-input" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn-primary" id="btnLoginSubmit" style="width: 100%; padding: 10px; font-size: 0.88rem; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Log In to CodeSense
+        </button>
+      </form>
+
+      <!-- Create Account Form -->
+      <form id="registerForm" style="display: none;" onsubmit="App.handleRegister(event)">
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 4px;">Choose Username</label>
+          <input type="text" class="text-input" id="regUsername" placeholder="e.g. akshayaa" required spellcheck="false" minlength="3" autocomplete="username">
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 4px;">Email Address</label>
+          <input type="email" class="text-input" id="regEmail" placeholder="student@example.com" required spellcheck="false" autocomplete="email">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="font-size: 0.78rem; font-weight: 600; color: #cbd5e1; display: block; margin-bottom: 4px;">Create Password</label>
+          <input type="password" class="text-input" id="regPassword" placeholder="Minimum 4 characters" required minlength="4" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn-primary" id="btnRegisterSubmit" style="width: 100%; padding: 10px; font-size: 0.88rem; background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+          <i class="fa-solid fa-user-plus"></i> Create Free Account
+        </button>
+      </form>
     </div>
   </div>
 

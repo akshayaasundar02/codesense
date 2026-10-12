@@ -33,6 +33,7 @@ class ExecuteResponse(BaseModel):
     visual_data: Optional[VisualData] = None
     all_tests_passed: Optional[bool] = None
     test_results: Optional[List[Dict[str, Any]]] = None
+    expected_output: Optional[str] = None
 
 class HintRequest(BaseModel):
     code: str
@@ -99,6 +100,21 @@ class RecordAttemptRequest(BaseModel):
     attempts_count: int
     error_type: Optional[str] = None
     code: Optional[str] = None
+    user_id: Optional[str] = "student_1"
+
+class RegisterRequest(BaseModel):
+    username: str
+    email: str
+    password: str
+
+class LoginRequest(BaseModel):
+    identifier: str
+    password: str
+
+class AuthResponse(BaseModel):
+    success: bool
+    message: str
+    user: Optional[Dict[str, Any]] = None
 
 class UserProfileResponse(BaseModel):
     total_solved: int
@@ -115,3 +131,4 @@ class UserProfileResponse(BaseModel):
     error_radar: Dict[str, int]
     topic_progress: Dict[str, Dict[str, Any]]
     recent_attempts: List[Dict[str, Any]]
+    username: Optional[str] = None

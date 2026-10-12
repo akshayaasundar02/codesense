@@ -11,13 +11,14 @@ from app.models import (
     ExplainCauseRequest, ExplainCauseResponse,
     TransferChallengeRequest, TransferChallengeResponse,
     RecordAttemptRequest, UserProfileResponse,
+    RegisterRequest, LoginRequest, AuthResponse,
     ParsedError
 )
 from app.runner import run_code
 from app.curriculum_data import get_topics, get_problems, get_problem_by_id
 from app.visualizer_engine import get_visual_data_for_error
 from app.tutor_engine import generate_hint, explain_cause, generate_transfer_challenge, get_groq_client
-from app.database import record_attempt, get_user_profile
+from app.database import record_attempt, get_user_profile, create_user, authenticate_user, get_user_solved_status
 
 app = FastAPI(
     title="CodeSense API",
@@ -80,8 +81,14 @@ def execute_code_endpoint(req: ExecuteRequest):
     problem = get_problem_by_id(req.question_id) if req.question_id else None
     all_tests_passed = False
     
-    if problem and success:
+    # Determine expected output
+    expected = ""
+    if problem:
         expected = problem.get("expected_output", "").strip()
+    elif req.expected_output:
+        expected = req.expected_output.strip()
+
+    if problem and success:
         actual = stdout.strip()
         if expected in actual or actual == expected:
             all_tests_passed = True
@@ -93,8 +100,6 @@ def execute_code_endpoint(req: ExecuteRequest):
                 message=f"Your code ran without syntax errors, but the output did not match the expected test result.\nYour output: '{actual if actual else '[Empty - Nothing was printed]'}'\nExpected goal: '{expected}'"
             )
     elif success and req.expected_output and req.expected_output.strip():
-        # Custom student question with target expected output
-        expected = req.expected_output.strip()
         actual = stdout.strip()
         if expected in actual or actual == expected:
             all_tests_passed = True
@@ -135,7 +140,8 @@ def execute_code_endpoint(req: ExecuteRequest):
         execution_time_ms=elapsed_ms,
         parsed_error=parsed_err,
         visual_data=visual_data,
-        all_tests_passed=all_tests_passed
+        all_tests_passed=all_tests_passed,
+        expected_output=expected
     )
 
 # ----------------- HINT-FIRST TUTOR ENDPOINTS -----------------
@@ -176,6 +182,23 @@ def get_transfer_challenge_endpoint(req: TransferChallengeRequest):
         user_api_key=req.user_api_key
     )
 
+# ----------------- AUTHENTICATION ENDPOINTS -----------------
+
+@app.post("/api/auth/register", response_model=AuthResponse)
+def register_endpoint(req: RegisterRequest):
+    result = create_user(req.username, req.email, req.password)
+    return AuthResponse(**result)
+
+@app.post("/api/auth/login", response_model=AuthResponse)
+def login_endpoint(req: LoginRequest):
+    result = authenticate_user(req.identifier, req.password)
+    return AuthResponse(**result)
+
+@app.get("/api/user-progress")
+def user_progress_endpoint(user_id: str = "student_1", language: Optional[str] = None):
+    solved_map = get_user_solved_status(user_id, language)
+    return {"user_id": user_id, "solved_problems": solved_map}
+
 # ----------------- LEARNER ANALYTICS & PROFILE -----------------
 
 @app.post("/api/record-attempt")
@@ -187,13 +210,14 @@ def record_attempt_endpoint(req: RecordAttemptRequest):
         hints_used=req.hints_used,
         attempts_count=req.attempts_count,
         error_type=req.error_type,
-        code=req.code
+        code=req.code,
+        user_id=req.user_id or "student_1"
     )
     return {"status": "recorded"}
 
 @app.get("/api/profile", response_model=UserProfileResponse)
-def get_profile_endpoint():
-    data = get_user_profile()
+def get_profile_endpoint(user_id: str = "student_1"):
+    data = get_user_profile(user_id)
     return UserProfileResponse(**data)
 
 @app.post("/api/settings/verify-groq")

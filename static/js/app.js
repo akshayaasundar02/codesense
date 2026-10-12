@@ -15,12 +15,20 @@ const App = {
   activeLanguage: "python", // "python" or "java"
   transferChallengeData: null,
   isCustomMode: false,
+  currentUser: null,
+  currentUserId: "student_1",
+  solvedProblemsMap: {},
 
   async init() {
+    this.currentUser = JSON.parse(localStorage.getItem("codesense_user") || "null");
+    this.currentUserId = this.currentUser ? this.currentUser.username : "student_1";
+    this.updateAuthUI();
+
     EditorManager.init();
     HintManager.reset();
     this.setupEventListeners();
     await this.loadTopics();
+    await this.fetchUserProgress();
     await this.updateProfileStats();
     this.showTopicsView();
   },
@@ -191,28 +199,32 @@ const App = {
       const data = await res.json();
       this.currentTopicProblems = data.problems || [];
 
+      await this.fetchUserProgress();
       let html = "";
       this.currentTopicProblems.forEach((p) => {
         const lvl = p.level || 1;
         const diffClass = lvl <= 3 ? "beg" : lvl <= 7 ? "mid" : "adv";
-        const diffLabel = lvl <= 3 ? "Beginner" : lvl <= 7 ? "Intermediate" : "Advanced";
+        const isSolved = Boolean(this.solvedProblemsMap && this.solvedProblemsMap[p.id]);
 
         html += `
-          <div class="question-level-card" onclick="App.selectProblem('${p.id}')">
+          <div class="question-level-card ${isSolved ? 'is-solved' : ''}" onclick="App.selectProblem('${p.id}')">
             <div class="q-level-badge ${diffClass}">
               Level ${lvl}
             </div>
 
             <div class="q-info">
-              <div class="q-title">${p.title}</div>
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                <div class="q-title">${p.title}</div>
+                ${isSolved ? `<span class="q-solved-badge"><i class="fa-solid fa-circle-check"></i> Solved</span>` : ''}
+              </div>
               <div class="q-scenario">
-                <i class="fa-solid fa-building"></i> ${p.scenario}
+                <i class="fa-solid fa-brain"></i> ${p.scenario}
               </div>
               <div class="q-desc">${p.description}</div>
             </div>
 
-            <button class="q-action-btn">
-              Solve Problem <i class="fa-solid fa-code"></i>
+            <button class="q-action-btn ${isSolved ? 'is-solved' : ''}">
+              ${isSolved ? 'Review & Practice <i class="fa-solid fa-rotate-left"></i>' : 'Solve Problem <i class="fa-solid fa-code"></i>'}
             </button>
           </div>
         `;
@@ -264,10 +276,42 @@ const App = {
       document.getElementById("scenarioDescription").textContent = data.description;
       document.getElementById("expectedOutputText").textContent = data.expected_output;
 
-      // Editor code setup - starts with clean template with inputs only so junior coder codes on their own!
+      // Check if problem is already solved (Review Mode)
+      const isSolved = Boolean(this.solvedProblemsMap && this.solvedProblemsMap[data.id]);
+      const solvedInfo = this.solvedProblemsMap ? this.solvedProblemsMap[data.id] : null;
+
+      let reviewBanner = document.getElementById("reviewModeBanner");
+      if (isSolved) {
+        if (!reviewBanner && curBrief) {
+          reviewBanner = document.createElement("div");
+          reviewBanner.id = "reviewModeBanner";
+          reviewBanner.className = "solved-review-banner";
+          curBrief.insertBefore(reviewBanner, curBrief.firstChild);
+        }
+        if (reviewBanner) {
+          reviewBanner.style.display = "flex";
+          reviewBanner.innerHTML = `
+            <div>
+              <i class="fa-solid fa-circle-check" style="color: #34d399; margin-right: 6px;"></i>
+              <strong>Solved Problem (Review Mode):</strong> You've already solved this challenge! Review your working code below or practice alternate approaches.
+            </div>
+            <button class="btn-secondary" style="font-size: 0.74rem; padding: 4px 10px;" onclick="App.resetToStarterCode()">
+              <i class="fa-solid fa-rotate-left"></i> Reset to Starter Code
+            </button>
+          `;
+        }
+      } else if (reviewBanner) {
+        reviewBanner.style.display = "none";
+      }
+
+      // Editor code setup - if solved and saved code exists, load it; else use starter template
       EditorManager.starterTemplate = data.starter_code;
       EditorManager.sampleBuggyCode = data.buggy_code;
-      EditorManager.setCode(EditorManager.starterTemplate, data.language);
+      if (isSolved && solvedInfo && solvedInfo.last_code && solvedInfo.last_code.trim()) {
+        EditorManager.setCode(solvedInfo.last_code, data.language);
+      } else {
+        EditorManager.setCode(EditorManager.starterTemplate, data.language);
+      }
 
       // Reset Hints Drawer with new simplified clues
       HintManager.reset();
@@ -411,21 +455,47 @@ const App = {
     });
   },
 
-  renderErrorBanner(parsedError, execTimeMs) {
+  renderErrorBanner(parsedError, execTimeMs, res = null) {
     const banner = document.getElementById("errorBannerContainer");
     if (!banner) return;
+
+    const expected = (res && res.computed_expected) 
+      ? res.computed_expected 
+      : (this.currentProblem ? (this.currentProblem.expected_output || "") : "");
+    const actual = (res && res.computed_actual !== undefined) ? res.computed_actual : "";
 
     banner.innerHTML = `
       <div class="error-banner">
         <div class="error-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
-        <div class="error-meta">
-          <div class="error-type-title">
-            ${parsedError.error_type}
-            ${parsedError.line_number ? `<span class="error-line-badge"><i class="fa-solid fa-location-crosshairs"></i> Line ${parsedError.line_number}</span>` : ''}
+        <div class="error-meta" style="width: 100%;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="error-type-title">
+              ${parsedError.error_type}
+              ${parsedError.line_number ? `<span class="error-line-badge"><i class="fa-solid fa-location-crosshairs"></i> Line ${parsedError.line_number}</span>` : ''}
+            </div>
+            <span style="font-size: 0.72rem; color: var(--text-dim);">${execTimeMs}ms</span>
           </div>
-          <div class="error-desc">${parsedError.message || "Something went wrong on the highlighted line."}</div>
+          <div class="error-desc" style="margin-bottom: 8px;">${parsedError.message || "Something went wrong on the highlighted line."}</div>
+
+          <!-- Expected Output vs Output You Got Comparison Grid -->
+          ${expected ? `
+            <div class="output-comparison-grid">
+              <div class="output-box-wrapper expected">
+                <div class="output-box-title" style="color: #38bdf8;">
+                  <span><i class="fa-solid fa-bullseye"></i> Expected Output:</span>
+                </div>
+                <pre class="output-box-content">${expected.trim()}</pre>
+              </div>
+              <div class="output-box-wrapper actual-fail">
+                <div class="output-box-title" style="color: #f87171;">
+                  <span><i class="fa-solid fa-terminal"></i> Output You Got:</span>
+                  <span style="background: rgba(248,113,113,0.25); padding: 1px 6px; border-radius: 4px; font-size: 0.68rem; color: #fca5a5;">MISMATCH ❌</span>
+                </div>
+                <pre class="output-box-content" style="color: #fca5a5;">${actual.trim() ? actual.trim() : '[Empty - No output was printed]'}</pre>
+              </div>
+            </div>
+          ` : ''}
         </div>
-        <span style="font-size: 0.72rem; color: var(--text-dim);">${execTimeMs}ms</span>
       </div>
     `;
   },
@@ -507,6 +577,11 @@ const App = {
   },
 
   async onProblemSolved(res) {
+    const expected = (res && res.computed_expected) 
+      ? res.computed_expected 
+      : (this.currentProblem ? (this.currentProblem.expected_output || "") : "");
+    const actual = (res && res.computed_actual !== undefined) ? res.computed_actual : "";
+
     if (this.isCustomMode) {
       this.showToast("🎉 Awesome Job! Custom Question Solved!");
       this.launchConfetti();
@@ -515,9 +590,21 @@ const App = {
         banner.innerHTML = `
           <div class="error-banner success">
             <div class="error-icon"><i class="fa-solid fa-circle-check"></i></div>
-            <div class="error-meta">
+            <div class="error-meta" style="width: 100%;">
               <div class="error-type-title">Awesome Job! Custom Problem Solved! 🎉</div>
-              <div class="error-desc">Your code executed cleanly and successfully matched your expected goal!</div>
+              <div class="error-desc" style="margin-bottom: 8px;">Your code executed cleanly and successfully matched your expected goal!</div>
+              ${expected ? `
+                <div class="output-comparison-grid">
+                  <div class="output-box-wrapper expected">
+                    <div class="output-box-title" style="color: #38bdf8;"><i class="fa-solid fa-bullseye"></i> Expected Output</div>
+                    <pre class="output-box-content">${expected.trim()}</pre>
+                  </div>
+                  <div class="output-box-wrapper actual-pass">
+                    <div class="output-box-title" style="color: #4ade80;"><span><i class="fa-solid fa-terminal"></i> Output You Got</span> <span style="background: rgba(74,222,128,0.25); padding: 1px 6px; border-radius: 4px; font-size: 0.68rem; color: #86efac;">MATCH ✅</span></div>
+                    <pre class="output-box-content" style="color: #86efac;">${actual.trim() ? actual.trim() : '[Output matched target]'}</pre>
+                  </div>
+                </div>
+              ` : ''}
             </div>
           </div>
         `;
@@ -525,38 +612,57 @@ const App = {
       return;
     }
 
-    this.showToast("🎉 Bug Conquered! Tests Passed!");
+    this.showToast("🎉 Problem Solved! All Tests Passed!");
     this.launchConfetti();
 
-    // Render success banner
+    // Render success banner with Expected and Actual output comparison
     const banner = document.getElementById("errorBannerContainer");
     if (banner) {
       banner.innerHTML = `
         <div class="error-banner success">
           <div class="error-icon"><i class="fa-solid fa-circle-check"></i></div>
-          <div class="error-meta">
-            <div class="error-type-title">Awesome Job! Bug Solved!</div>
-            <div class="error-desc">Your code executed cleanly and produced the exact expected output.</div>
+          <div class="error-meta" style="width: 100%;">
+            <div class="error-type-title">Awesome Job! Problem Solved!</div>
+            <div class="error-desc" style="margin-bottom: 8px;">Your code executed cleanly and produced the exact expected output.</div>
+            ${expected ? `
+              <div class="output-comparison-grid">
+                <div class="output-box-wrapper expected">
+                  <div class="output-box-title" style="color: #38bdf8;"><i class="fa-solid fa-bullseye"></i> Expected Output</div>
+                  <pre class="output-box-content">${expected.trim()}</pre>
+                </div>
+                <div class="output-box-wrapper actual-pass">
+                  <div class="output-box-title" style="color: #4ade80;"><span><i class="fa-solid fa-terminal"></i> Output You Got</span> <span style="background: rgba(74,222,128,0.25); padding: 1px 6px; border-radius: 4px; font-size: 0.68rem; color: #86efac;">MATCH ✅</span></div>
+                  <pre class="output-box-content" style="color: #86efac;">${actual.trim() ? actual.trim() : '[Output matched target]'}</pre>
+                </div>
+              </div>
+            ` : ''}
           </div>
         </div>
       `;
     }
 
-    // Record solved attempt
+    // Record solved attempt in database for active user
     if (this.currentProblem) {
-      fetch("/api/record-attempt", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          question_id: this.currentProblem.id,
-          language: EditorManager.currentLanguage,
-          solved: true,
-          hints_used: HintManager.currentTier,
-          attempts_count: EditorManager.attemptsCount,
-          error_type: "None",
-          code: EditorManager.getCode()
-        })
-      }).then(() => this.updateProfileStats()).catch(console.error);
+      try {
+        await fetch("/api/record-attempt", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question_id: this.currentProblem.id,
+            language: EditorManager.currentLanguage,
+            solved: true,
+            hints_used: HintManager.currentTier,
+            attempts_count: EditorManager.attemptsCount,
+            error_type: "None",
+            code: EditorManager.getCode(),
+            user_id: this.currentUserId || "student_1"
+          })
+        });
+        await this.fetchUserProgress();
+        await this.updateProfileStats();
+      } catch (err) {
+        console.error(err);
+      }
     }
 
     // Prepare Transfer Challenge
@@ -660,7 +766,7 @@ ${tc.buggy_code}
 
   async updateProfileStats() {
     try {
-      const res = await fetch("/api/profile");
+      const res = await fetch(`/api/profile?user_id=${encodeURIComponent(this.currentUserId || 'student_1')}`);
       const profile = await res.json();
 
       const streakEl = document.getElementById("userStreak");
@@ -683,7 +789,7 @@ ${tc.buggy_code}
     modal.classList.add("open");
 
     try {
-      const res = await fetch("/api/profile");
+      const res = await fetch(`/api/profile?user_id=${encodeURIComponent(this.currentUserId || 'student_1')}`);
       const p = await res.json();
 
       // Top 5 Key Metrics
@@ -875,6 +981,183 @@ ${tc.buggy_code}
         { duration: Math.random() * 1500 + 1500, easing: "cubic-bezier(0.25, 1, 0.5, 1)" }
       );
       anim.onfinish = () => conf.remove();
+    }
+  },
+
+  // ========================================================
+  // USER AUTHENTICATION & SESSION MANAGEMENT
+  // ========================================================
+  updateAuthUI() {
+    const loggedOutPill = document.getElementById("loggedOutPill");
+    const loggedInPill = document.getElementById("loggedInPill");
+    const navUsername = document.getElementById("navUsername");
+
+    if (this.currentUser) {
+      if (loggedOutPill) loggedOutPill.style.display = "none";
+      if (loggedInPill) loggedInPill.style.display = "flex";
+      if (navUsername) navUsername.textContent = this.currentUser.username;
+    } else {
+      if (loggedOutPill) loggedOutPill.style.display = "flex";
+      if (loggedInPill) loggedInPill.style.display = "none";
+    }
+  },
+
+  openAuthModal(tab = "login") {
+    const modal = document.getElementById("authModal");
+    if (!modal) return;
+    this.switchAuthTab(tab);
+    modal.classList.add("active");
+  },
+
+  closeAuthModal() {
+    const modal = document.getElementById("authModal");
+    if (modal) modal.classList.remove("active");
+    const statusMsg = document.getElementById("authStatusMsg");
+    if (statusMsg) statusMsg.style.display = "none";
+  },
+
+  switchAuthTab(tab) {
+    const tabLogin = document.getElementById("authTabLogin");
+    const tabRegister = document.getElementById("authTabRegister");
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const statusMsg = document.getElementById("authStatusMsg");
+    const modalTitle = document.getElementById("authModalTitle");
+    if (statusMsg) statusMsg.style.display = "none";
+
+    if (tab === "login") {
+      if (tabLogin) { tabLogin.style.background = "#6366f1"; tabLogin.style.color = "white"; }
+      if (tabRegister) { tabRegister.style.background = "transparent"; tabRegister.style.color = "#94a3b8"; }
+      if (loginForm) loginForm.style.display = "block";
+      if (registerForm) registerForm.style.display = "none";
+      if (modalTitle) modalTitle.textContent = "Log In to CodeSense";
+    } else {
+      if (tabRegister) { tabRegister.style.background = "#10b981"; tabRegister.style.color = "white"; }
+      if (tabLogin) { tabLogin.style.background = "transparent"; tabLogin.style.color = "#94a3b8"; }
+      if (loginForm) loginForm.style.display = "none";
+      if (registerForm) registerForm.style.display = "block";
+      if (modalTitle) modalTitle.textContent = "Create Free Account";
+    }
+  },
+
+  async handleLogin(e) {
+    e.preventDefault();
+    const identifier = document.getElementById("loginIdentifier").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    const statusMsg = document.getElementById("authStatusMsg");
+    const submitBtn = document.getElementById("btnLoginSubmit");
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, password })
+      });
+      const data = await res.json();
+
+      if (data.success && data.user) {
+        this.currentUser = data.user;
+        this.currentUserId = data.user.username;
+        localStorage.setItem("codesense_user", JSON.stringify(data.user));
+        this.updateAuthUI();
+        this.closeAuthModal();
+        this.showToast(`Welcome back, ${data.user.username}!`);
+        await this.fetchUserProgress();
+        await this.updateProfileStats();
+        if (this.currentTopic) {
+          this.showTopicQuestionsView(this.currentTopic.id);
+        }
+      } else {
+        statusMsg.style.display = "block";
+        statusMsg.style.background = "rgba(239, 68, 68, 0.15)";
+        statusMsg.style.border = "1px solid rgba(239, 68, 68, 0.3)";
+        statusMsg.style.color = "#fca5a5";
+        statusMsg.textContent = data.message || "Login failed. Check your credentials.";
+      }
+    } catch (err) {
+      statusMsg.style.display = "block";
+      statusMsg.textContent = "Network error. Please try again.";
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Log In to CodeSense';
+    }
+  },
+
+  async handleRegister(e) {
+    e.preventDefault();
+    const username = document.getElementById("regUsername").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    const password = document.getElementById("regPassword").value;
+    const statusMsg = document.getElementById("authStatusMsg");
+    const submitBtn = document.getElementById("btnRegisterSubmit");
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating Account...';
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password })
+      });
+      const data = await res.json();
+
+      if (data.success && data.user) {
+        this.currentUser = data.user;
+        this.currentUserId = data.user.username;
+        localStorage.setItem("codesense_user", JSON.stringify(data.user));
+        this.updateAuthUI();
+        this.closeAuthModal();
+        this.showToast(`Account created! Welcome, ${data.user.username}! 🎉`);
+        await this.fetchUserProgress();
+        await this.updateProfileStats();
+      } else {
+        statusMsg.style.display = "block";
+        statusMsg.style.background = "rgba(239, 68, 68, 0.15)";
+        statusMsg.style.border = "1px solid rgba(239, 68, 68, 0.3)";
+        statusMsg.style.color = "#fca5a5";
+        statusMsg.textContent = data.message || "Failed to create account.";
+      }
+    } catch (err) {
+      statusMsg.style.display = "block";
+      statusMsg.textContent = "Network error. Please try again.";
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Create Free Account';
+    }
+  },
+
+  logout() {
+    this.currentUser = null;
+    this.currentUserId = "student_1";
+    localStorage.removeItem("codesense_user");
+    this.updateAuthUI();
+    this.showToast("Logged out successfully.");
+    this.fetchUserProgress();
+    this.updateProfileStats();
+    if (this.currentTopic) {
+      this.showTopicQuestionsView(this.currentTopic.id);
+    }
+  },
+
+  async fetchUserProgress() {
+    try {
+      const res = await fetch(`/api/user-progress?user_id=${encodeURIComponent(this.currentUserId || 'student_1')}&language=${this.activeLanguage}`);
+      const data = await res.json();
+      this.solvedProblemsMap = data.solved_problems || {};
+    } catch (e) {
+      console.error("Failed to fetch progress:", e);
+      this.solvedProblemsMap = {};
+    }
+  },
+
+  resetToStarterCode() {
+    if (this.currentProblem) {
+      EditorManager.setCode(this.currentProblem.starter_code, this.currentProblem.language);
+      this.showToast("Reset to starter code template.");
     }
   }
 };

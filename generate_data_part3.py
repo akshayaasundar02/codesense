@@ -2,14 +2,14 @@
 
 PART_3 = [
     # =========================================================================
-    # TOPIC 4: MATH & NUMBER PROBLEMS (10 Placement Questions)
+    # TOPIC 4: MATH & NUMBER PROBLEMS (10 practice Questions)
     # =========================================================================
     {
         "topic_id": "basics_types",
         "topic_name": "Math & Number Problems",
         "level": 1,
         "title": "Check Even or Odd & Divisibility",
-        "company": "TCS, Wipro",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Check whether an integer n is even and simultaneously divisible by 7.",
         "py_input": "n = 42",
         "py_bug": "n = 42\nis_valid = n / 2 == 0 and n / 7 == 0 # Bug: using / instead of %\nprint('Even and Divisible:', is_valid)",
@@ -34,7 +34,7 @@ PART_3 = [
         "topic_name": "Math & Number Problems",
         "level": 2,
         "title": "Reverse an Integer",
-        "company": "Microsoft, TCS",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Reverse the digits of an integer and print the reversed number.",
         "py_input": "n = 1234",
         "py_bug": "n = 1234\nrev = 0\nwhile n > 0:\n    rev = rev * 10 + n % 10\n    n = n / 10 # Bug: float division in Python\nprint('Reversed Number:', int(rev))",
@@ -59,7 +59,7 @@ PART_3 = [
         "topic_name": "Math & Number Problems",
         "level": 3,
         "title": "Check Armstrong Number",
-        "company": "Infosys, Cognizant",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Check if an n-digit number equals the sum of the nth powers of its digits (e.g., 153 = 1^3 + 5^3 + 3^3).",
         "py_input": "n = 153",
         "py_bug": "n = 153\ns = str(n)\npow_sum = sum(int(d) ^ len(s) for d in s) # Bug: ^ is XOR in Python!\nprint('Is Armstrong:', pow_sum == n)",
@@ -84,7 +84,7 @@ PART_3 = [
         "topic_name": "Math & Number Problems",
         "level": 4,
         "title": "Factorial of a Number",
-        "company": "Accenture, Capgemini",
+        "company": "Core Algorithm, Capgemini",
         "description": "Calculate the factorial of a positive integer n.",
         "py_input": "n = 6",
         "py_bug": "n = 6\nfact = 1\nfor i in range(1, n): # Bug: stops at n - 1\n    fact *= i\nprint('Factorial:', fact)",
@@ -109,7 +109,7 @@ PART_3 = [
         "topic_name": "Math & Number Problems",
         "level": 5,
         "title": "Greatest Common Divisor (GCD)",
-        "company": "Amazon, Adobe",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Compute the Greatest Common Divisor of two numbers using the Euclidean algorithm.",
         "py_input": "a = 48\nb = 18",
         "py_bug": "a = 48\nb = 18\nwhile b != 0:\n    a = b\n    b = a % b # Bug: overwrote a before computing modulo!\nprint('GCD:', a)",
@@ -134,7 +134,7 @@ PART_3 = [
         "topic_name": "Math & Number Problems",
         "level": 6,
         "title": "Check Prime Number",
-        "company": "Google, Flipkart",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Determine whether an integer greater than 1 is prime.",
         "py_input": "n = 29",
         "py_bug": "n = 29\nis_prime = True\nfor i in range(2, n // 2): # Bug: missing boundary checks\n    if n % i == 0:\n        is_prime = False\n        break\nprint('Is Prime:', is_prime)",
@@ -149,7 +149,7 @@ PART_3 = [
             "What to Change in Logic: Loop `range(2, int(n**0.5) + 1)` and ensure `n > 1`."
         ],
         "cause": [
-            "Testing up to sqrt(n) avoids O(n) timeout in placement benchmarks.",
+            "Testing up to sqrt(n) avoids O(n) timeout in practice benchmarks.",
             "Must also handle numbers <= 1 gracefully.",
             "Golden Rule: A non-prime number must have a factor <= sqrt(n)."
         ]
@@ -159,7 +159,7 @@ PART_3 = [
         "topic_name": "Math & Number Problems",
         "level": 7,
         "title": "Power of Two (Bitwise & Math)",
-        "company": "Microsoft, Amazon",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Check if an integer is a power of two using bitwise properties.",
         "py_input": "n = 64",
         "py_bug": "n = 64\nis_pow2 = (n & (n - 1)) == 1 # Bug: should be 0!\nprint('Is Power of Two:', is_pow2)",
@@ -184,7 +184,7 @@ PART_3 = [
         "topic_name": "Math & Number Problems",
         "level": 8,
         "title": "Count Trailing Zeroes in Factorial",
-        "company": "Google, Goldman Sachs",
+        "company": "Core Algorithm, Core Algorithm Sachs",
         "description": "Calculate the number of trailing zeroes in n! without calculating the huge factorial.",
         "py_input": "n = 25",
         "py_bug": "n = 25\nzeroes = n // 5 # Bug: missed multiples of 25, 125...\nprint('Trailing Zeroes:', zeroes)",
@@ -209,7 +209,7 @@ PART_3 = [
         "topic_name": "Math & Number Problems",
         "level": 9,
         "title": "Sieve of Eratosthenes (Count Primes)",
-        "company": "Amazon, Oracle",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Count the number of prime numbers strictly less than n.",
         "py_input": "n = 30",
         "py_bug": "n = 30\nprimes = [True] * n\nprimes[0] = primes[1] = False\nfor p in range(2, int(n**0.5) + 1):\n    if primes[p]:\n        for i in range(p * 2, n, p): primes[i] = False\nprint('Prime Count:', sum(primes))",
@@ -234,7 +234,7 @@ PART_3 = [
         "topic_name": "Math & Number Problems",
         "level": 10,
         "title": "Fast Modular Exponentiation",
-        "company": "Google, Uber",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Compute (base^exp) % mod efficiently in O(log exp) time.",
         "py_input": "base = 2\nexp = 10\nmod = 1000",
         "py_bug": "base = 2\nexp = 10\nmod = 1000\nres = (base ** exp) # Bug: huge intermediate without modulo step-by-step\nprint('Modular Result:', res % mod)",
@@ -256,14 +256,14 @@ PART_3 = [
     },
 
     # =========================================================================
-    # TOPIC 5: CONDITIONALS & DECISION LOGIC (10 Placement Questions)
+    # TOPIC 5: CONDITIONALS & DECISION LOGIC (10 practice Questions)
     # =========================================================================
     {
         "topic_id": "conditionals",
         "topic_name": "Conditionals & Logic",
         "level": 1,
         "title": "Find Largest of Three Numbers",
-        "company": "TCS, Wipro",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Find the largest among three numbers using conditional if-elif branches.",
         "py_input": "a = 45\nb = 89\nc = 32",
         "py_bug": "a = 45\nb = 89\nc = 32\nif a > b and a > c: largest = a\nelif b > a: largest = b # Bug: forgot comparing b against c!\nelse: largest = c\nprint('Largest:', largest)",
@@ -288,7 +288,7 @@ PART_3 = [
         "topic_name": "Conditionals & Logic",
         "level": 2,
         "title": "Check Leap Year Logic",
-        "company": "Accenture, Infosys",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Check whether a given year is a leap year according to calendar rules.",
         "py_input": "year = 2024",
         "py_bug": "year = 2024\nis_leap = year % 4 == 0 # Bug: missing century exclusion rule\nprint('Is Leap Year:', is_leap)",
@@ -313,7 +313,7 @@ PART_3 = [
         "topic_name": "Conditionals & Logic",
         "level": 3,
         "title": "Valid Triangle Checker",
-        "company": "Wipro, TCS",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Determine if three side lengths can form a valid non-degenerate triangle.",
         "py_input": "a = 7\nb = 10\nc = 5",
         "py_bug": "a = 7\nb = 10\nc = 5\nis_valid = a + b > c # Bug: only tested one pair of sides!\nprint('Valid Triangle:', is_valid)",
@@ -338,7 +338,7 @@ PART_3 = [
         "topic_name": "Conditionals & Logic",
         "level": 4,
         "title": "Student Grade & Scholarship Eligibility",
-        "company": "Cognizant, Capgemini",
+        "company": "Core Algorithm, Capgemini",
         "description": "Calculate average marks and assign grade 'A' if average >= 85, else 'B'.",
         "py_input": "marks = [85, 92, 78, 88, 95]",
         "py_bug": "marks = [85, 92, 78, 88, 95]\navg = sum(marks) / len(marks)\ngrade = 'B'\nif avg > 85: grade = 'A' # Bug: strict > misses exactly 85\nprint(f'Average: {avg:.1f}, Grade: {grade}')",
@@ -363,7 +363,7 @@ PART_3 = [
         "topic_name": "Conditionals & Logic",
         "level": 5,
         "title": "Electricity Tariff Surcharge Slab",
-        "company": "Infosys, HCL",
+        "company": "Core Algorithm, HCL",
         "description": "Calculate total electricity bill for 250 units: 0-100 units at 5/unit, 101-200 at 6/unit, 201+ at 7.5/unit, with 100 fixed meter charge.",
         "py_input": "units = 250",
         "py_bug": "units = 250\n# Flat rate calculation instead of slab\nbill = 100 + (units * 7.5)\nprint('Total Bill:', float(bill))",
@@ -388,7 +388,7 @@ PART_3 = [
         "topic_name": "Conditionals & Logic",
         "level": 6,
         "title": "Roman Numeral to Integer",
-        "company": "Amazon, Microsoft",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Convert Roman numeral string MCMXCIV to an integer value.",
         "py_input": "s = 'MCMXCIV'",
         "py_bug": "s = 'MCMXCIV'\nval = {'I': 1, 'V': 5, 'X': 10, 'L': 50, 'C': 100, 'D': 500, 'M': 1000}\ntotal = 0\nfor i in range(len(s)):\n    if val[s[i]] < val[s[i + 1]]: # Bug: out of bounds on last char\n        total -= val[s[i]]\n    else: total += val[s[i]]\nprint('Integer Value:', total)",
@@ -413,7 +413,7 @@ PART_3 = [
         "topic_name": "Conditionals & Logic",
         "level": 7,
         "title": "Integer to Roman Numeral",
-        "company": "Bloomberg, Adobe",
+        "company": "Bloomberg, Core Algorithm",
         "description": "Convert integer 58 to Roman numeral string.",
         "py_input": "num = 58",
         "py_bug": "num = 58\nroman_map = [(50, 'L'), (10, 'X'), (5, 'V'), (1, 'I')]\nres = ''\nfor v, sym in roman_map:\n    while num >= v:\n        res += sym\n        num -= v\nprint('Roman:', res)",
@@ -438,7 +438,7 @@ PART_3 = [
         "topic_name": "Conditionals & Logic",
         "level": 8,
         "title": "Compare Software Version Numbers",
-        "company": "Amazon, Apple",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Compare two version strings v1 and v2. Return 0 if identical, 1 if v1 > v2, -1 if v1 < v2.",
         "py_input": "v1 = '1.01'\nv2 = '1.001'",
         "py_bug": "v1 = '1.01'\nv2 = '1.001'\nans = 0\nif v1 > v2: ans = 1\nelif v1 < v2: ans = -1\nprint('Version Compare:', ans)",
@@ -463,7 +463,7 @@ PART_3 = [
         "topic_name": "Conditionals & Logic",
         "level": 9,
         "title": "Basic Calculator with Precedence",
-        "company": "Google, Microsoft",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Evaluate an arithmetic expression string with + and * operators respecting precedence.",
         "py_input": "s = '3+2*2'",
         "py_bug": "s = '3+2*2'\n# Left to right evaluation without precedence\n# 3 + 2 = 5 * 2 = 10 (Wrong! Should be 3 + 4 = 7)\nans = eval(s)\nprint('Calculated Result:', ans)",
@@ -488,7 +488,7 @@ PART_3 = [
         "topic_name": "Conditionals & Logic",
         "level": 10,
         "title": "Valid Number String Parser",
-        "company": "Google, Meta",
+        "company": "Core Algorithm, Core Algorithm",
         "description": "Determine if a given string is a valid decimal number with optional signs and scientific exponent.",
         "py_input": "s = '-0.1e10'",
         "py_bug": "s = '-0.1e10'\ntry:\n    float(s)\n    is_valid = True\nexcept ValueError:\n    is_valid = False\nprint('Is Valid Number:', is_valid)",
@@ -504,7 +504,7 @@ PART_3 = [
         ],
         "cause": [
             "Number parser edge cases (signs, decimal point, exponent).",
-            "Placement state machine pattern.",
+            "practice state machine pattern.",
             "Golden Rule: State flags track seen digit, seen dot, and seen exponent."
         ]
     }

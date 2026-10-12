@@ -176,9 +176,38 @@ const EditorManager = {
 
   async handleExecutionResult(res) {
     const term = document.getElementById("consoleOutput");
+    const expected = (res.expected_output !== undefined && res.expected_output !== null && res.expected_output !== "")
+      ? res.expected_output
+      : (App.currentProblem ? (App.currentProblem.expected_output || "") : "");
+    const actual = (res.output !== undefined && res.output !== null) ? res.output : "";
+    const isSuccess = res.success && res.all_tests_passed;
+
     if (term) {
-      term.textContent = (res.output || "") + (res.error ? `\n--- ERROR LOG ---\n${res.error}` : "");
+      let outputDisplay = "";
+      if (expected) {
+        outputDisplay += `========================================================\n`;
+        outputDisplay += `🎯 TARGET EXPECTED OUTPUT:\n`;
+        outputDisplay += `--------------------------------------------------------\n`;
+        outputDisplay += `${expected.trim()}\n\n`;
+        outputDisplay += `💻 THE OUTPUT YOU GOT (Actual Result):\n`;
+        outputDisplay += `--------------------------------------------------------\n`;
+        outputDisplay += `${actual.trim() ? actual.trim() : "[Empty - Your code did not print any output]"}\n`;
+        outputDisplay += `========================================================\n`;
+        outputDisplay += `TEST EVALUATION: ${isSuccess ? "✅ ALL TESTS PASSED! Output matches expected goal." : "❌ OUTPUT MISMATCH! Your output differs from expected."}\n`;
+        outputDisplay += `========================================================\n`;
+      } else {
+        outputDisplay += actual ? actual : "[No output produced]\n";
+      }
+
+      if (res.error) {
+        outputDisplay += `\n⚠️ RUNTIME / COMPILER ERROR:\n${res.error}\n`;
+      }
+      term.textContent = outputDisplay;
     }
+
+    // Attach expected and actual to res for diagnostic banner use
+    res.computed_expected = expected;
+    res.computed_actual = actual;
 
     // 1. Success case: All tests passed & no error
     if (res.success && res.all_tests_passed) {
@@ -201,8 +230,8 @@ const EditorManager = {
     // Render visual data
     VisualizerEngine.render(res.visual_data, document.getElementById("visualizerContainer"));
 
-    // Render Error Banner
-    App.renderErrorBanner(parsed, res.execution_time_ms);
+    // Render Error Banner with Expected vs Actual comparison
+    App.renderErrorBanner(parsed, res.execution_time_ms, res);
 
     // Fetch 3-Way Cause Breakdown
     App.fetchCauseBreakdown(parsed);
@@ -219,7 +248,8 @@ const EditorManager = {
           hints_used: HintManager.currentTier,
           attempts_count: this.attemptsCount,
           error_type: parsed.error_type,
-          code: this.getCode()
+          code: this.getCode(),
+          user_id: App.currentUserId || "student_1"
         })
       }).catch(console.error);
     }

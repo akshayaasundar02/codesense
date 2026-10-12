@@ -8,4 +8,4 @@ from generate_data_part5 import PART_5
 ALL_QUESTIONS = PART_1 + PART_2 + PART_3 + PART_4 + PART_5
 
 print(f"Total topics: {len(TOPICS_DEF)}")
-print(f"Total placement questions aggregated: {len(ALL_QUESTIONS)}")
+print(f"Total practice questions aggregated: {len(ALL_QUESTIONS)}")

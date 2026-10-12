@@ -1112,3 +1112,109 @@ section.diagnostic-pane {
   border-color: #f87171;
 }
 
+/* Solved Status & Review Mode Styles */
+.q-solved-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.question-level-card.is-solved {
+  border-color: rgba(16, 185, 129, 0.35);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(15, 23, 42, 0.8) 100%);
+}
+.solved-review-banner {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #a7f3d0;
+}
+
+/* Expected vs Actual Output Comparison Grid */
+.output-comparison-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.output-box-wrapper {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.output-box-wrapper.expected {
+  border-color: rgba(56, 189, 248, 0.3);
+  background: rgba(15, 23, 42, 0.85);
+}
+.output-box-wrapper.actual-pass {
+  border-color: rgba(74, 222, 128, 0.35);
+  background: rgba(6, 78, 59, 0.15);
+}
+.output-box-wrapper.actual-fail {
+  border-color: rgba(248, 113, 113, 0.35);
+  background: rgba(127, 29, 29, 0.15);
+}
+.output-box-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.output-box-content {
+  font-family: 'Fira Code', monospace;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 140px;
+  overflow-y: auto;
+  color: #f8fafc;
+  margin: 0;
+}
+
+/* User Auth in Header */
+.user-auth-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #c7d2fe;
+}
+.btn-auth-logout {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+.btn-auth-logout:hover {
+  color: #f87171;
+  background: rgba(239, 68, 68, 0.1);
+}
+
