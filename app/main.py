@@ -52,11 +52,14 @@ def list_problems(topic_id: str = None, language: str = None):
                 "id": p["id"],
                 "topic_id": p["topic_id"],
                 "topic_name": p["topic_name"],
+                "level": p.get("level", 1),
                 "title": p["title"],
-                "difficulty": p["difficulty"],
+                "difficulty": p.get("difficulty", "Beginner"),
                 "language": p["language"],
                 "scenario": p["scenario"],
-                "bug_category": p["bug_category"]
+                "description": p.get("description", ""),
+                "expected_output": p.get("expected_output", ""),
+                "bug_category": p.get("bug_category", "")
             }
             for p in problems
         ]

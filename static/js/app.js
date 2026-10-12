@@ -343,13 +343,23 @@ const App = {
       await this.fetchUserProgress();
       let html = "";
       this.currentTopicProblems.forEach((p) => {
-        const lvl = p.level || 1;
+        let lvl = p.level;
+        if (!lvl || lvl === 1) {
+          const m = p.title ? p.title.match(/Level\s*(\d+)/i) : null;
+          if (m) {
+            lvl = parseInt(m[1]);
+          } else {
+            const idM = p.id ? p.id.match(/-(\d+)$/) : null;
+            if (idM) lvl = parseInt(idM[1]);
+          }
+        }
+        lvl = lvl || 1;
         const diffClass = lvl <= 3 ? "beg" : lvl <= 7 ? "mid" : "adv";
-        const diffLabel = lvl <= 3 ? "Beginner" : lvl <= 7 ? "Intermediate" : "Advanced";
+        const diffLabel = p.difficulty || (lvl <= 3 ? "Beginner" : lvl <= 7 ? "Intermediate" : "Advanced");
         const isSolved = Boolean(this.solvedProblemsMap && this.solvedProblemsMap[p.id]);
 
         html += `
-          <div class="question-level-card ${isSolved ? 'is-solved' : ''}" data-diff="${diffLabel.toLowerCase()}" onclick="App.selectProblem('${p.id}')">
+          <div class="question-level-card ${isSolved ? 'is-solved' : ''}" data-level="${lvl}" data-diff="${diffLabel.toLowerCase()}" onclick="App.selectProblem('${p.id}')">
             <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-width: 90px;">
               <div class="q-level-badge ${diffClass}">
                 Level ${lvl}
@@ -383,17 +393,49 @@ const App = {
   },
 
   filterQuestionsByDifficulty(filter) {
+    const filterKey = (filter || "all").toLowerCase().trim();
     document.querySelectorAll(".diff-guide-chip").forEach(chip => {
-      chip.classList.toggle("active", chip.getAttribute("data-filter") === filter);
+      chip.classList.toggle("active", chip.getAttribute("data-filter") === filterKey);
     });
+    let visibleCount = 0;
     document.querySelectorAll(".question-level-card").forEach(card => {
-      if (filter === "all") {
+      const cardDiff = (card.getAttribute("data-diff") || "").toLowerCase().trim();
+      const cardLevel = parseInt(card.getAttribute("data-level") || "1");
+      
+      let matches = false;
+      if (filterKey === "all") {
+        matches = true;
+      } else if (filterKey === "beginner") {
+        matches = (cardDiff === "beginner" || cardLevel <= 3);
+      } else if (filterKey === "intermediate") {
+        matches = (cardDiff === "intermediate" || (cardLevel >= 4 && cardLevel <= 7));
+      } else if (filterKey === "advanced") {
+        matches = (cardDiff === "advanced" || cardLevel >= 8);
+      }
+
+      if (matches) {
         card.style.display = "flex";
+        visibleCount++;
       } else {
-        const cardDiff = card.getAttribute("data-diff");
-        card.style.display = (cardDiff === filter) ? "flex" : "none";
+        card.style.display = "none";
       }
     });
+
+    const emptyMsg = document.getElementById("emptyFilterMsg");
+    if (visibleCount === 0) {
+      if (!emptyMsg) {
+        const container = document.getElementById("questionsTrackContainer");
+        const msg = document.createElement("div");
+        msg.id = "emptyFilterMsg";
+        msg.style.padding = "30px";
+        msg.style.textAlign = "center";
+        msg.style.color = "var(--text-dim)";
+        msg.innerHTML = `<i class="fa-solid fa-filter"></i> No questions found for this difficulty tier.`;
+        container.appendChild(msg);
+      }
+    } else if (emptyMsg) {
+      emptyMsg.remove();
+    }
   },
 
   backToCurrentTopicQuestions() {
