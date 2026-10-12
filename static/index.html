@@ -100,9 +100,137 @@
   </header>
 
   <!-- ========================================================
+       SCREEN 0: AUTHENTICATION & LOGIN LANDING SCREEN (FIRST SCREEN)
+       ======================================================== -->
+  <div class="app-view active" id="view-auth-landing">
+    <div class="auth-landing-wrapper">
+      <div class="auth-landing-left">
+        <div class="auth-landing-badge">
+          <i class="fa-solid fa-graduation-cap"></i> Student Interactive Coding Platform
+        </div>
+        <h1 class="auth-landing-title">
+          Master Algorithmic Programming with <span class="highlight-text">CodeSense</span>
+        </h1>
+        <p class="auth-landing-desc">
+          Step into a focused coding and debugging environment. Advance across 10 progressive difficulty tiers from scratch to mastery, build your daily solving streak, and learn to think like a programmer with step-by-step AI clues.
+        </p>
+
+        <div class="auth-features-list">
+          <div class="auth-feature-item">
+            <div class="feature-icon" style="background: rgba(14, 165, 233, 0.15); color: #38bdf8;">
+              <i class="fa-solid fa-stairs"></i>
+            </div>
+            <div>
+              <h4>10 Progressive Difficulty Tiers</h4>
+              <p>Levels 1–3 (Beginner) &rarr; Levels 4–7 (Intermediate) &rarr; Levels 8–10 (Advanced).</p>
+            </div>
+          </div>
+          <div class="auth-feature-item">
+            <div class="feature-icon" style="background: rgba(244, 63, 94, 0.15); color: #f43f5e;">
+              <i class="fa-solid fa-fire"></i>
+            </div>
+            <div>
+              <h4>Daily Problem Solving Streak</h4>
+              <p>Streaks increase strictly when you successfully solve questions — encouraging genuine daily practice.</p>
+            </div>
+          </div>
+          <div class="auth-feature-item">
+            <div class="feature-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981;">
+              <i class="fa-solid fa-lightbulb"></i>
+            </div>
+            <div>
+              <h4>Hint-First Tutor & State Visualizer</h4>
+              <p>Receive 3 tiers of pedagogical clues and visual memory traces instead of instant spoilers.</p>
+            </div>
+          </div>
+          <div class="auth-feature-item">
+            <div class="feature-icon" style="background: rgba(139, 92, 246, 0.15); color: #a78bfa;">
+              <i class="fa-solid fa-rotate-left"></i>
+            </div>
+            <div>
+              <h4>Review & Practice Solved Challenges</h4>
+              <p>Return to solved questions anytime with your saved code snapshots to practice alternate solutions.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auth Form Card -->
+      <div class="auth-landing-right">
+        <div class="glass-panel auth-card">
+          <div class="auth-card-top">
+            <div class="brand-icon" style="width: 44px; height: 44px; font-size: 1.3rem;">
+              <i class="fa-solid fa-brain"></i>
+            </div>
+            <div>
+              <h2 id="landingAuthTitle">Welcome to CodeSense</h2>
+              <p style="font-size: 0.76rem; color: var(--text-dim); margin: 0;">Log in or create your student account</p>
+            </div>
+          </div>
+
+          <!-- Switch Tabs -->
+          <div class="landing-tabs-bar">
+            <button id="landingTabLogin" class="landing-tab active" onclick="App.switchLandingAuthTab('login')">
+              <i class="fa-solid fa-arrow-right-to-bracket"></i> Log In
+            </button>
+            <button id="landingTabRegister" class="landing-tab" onclick="App.switchLandingAuthTab('register')">
+              <i class="fa-solid fa-user-plus"></i> Create Account
+            </button>
+          </div>
+
+          <!-- Status Message -->
+          <div id="landingAuthStatusMsg" style="display: none;" class="auth-status-box"></div>
+
+          <!-- Log In Form -->
+          <form id="landingLoginForm" onsubmit="App.handleLandingLogin(event)">
+            <div class="form-group-field">
+              <label><i class="fa-solid fa-user"></i> Username or Email</label>
+              <input type="text" class="text-input" id="landingLoginIdentifier" placeholder="e.g. akshayaa or student@univ.edu" required autocomplete="username">
+            </div>
+            <div class="form-group-field">
+              <label><i class="fa-solid fa-lock"></i> Password</label>
+              <input type="password" class="text-input" id="landingLoginPassword" placeholder="••••••••" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="btn-primary auth-submit-btn" id="btnLandingLoginSubmit">
+              <i class="fa-solid fa-arrow-right-to-bracket"></i> Log In to CodeSense
+            </button>
+          </form>
+
+          <!-- Create Account Form -->
+          <form id="landingRegisterForm" style="display: none;" onsubmit="App.handleLandingRegister(event)">
+            <div class="form-group-field">
+              <label><i class="fa-solid fa-user"></i> Choose Username</label>
+              <input type="text" class="text-input" id="landingRegUsername" placeholder="e.g. akshayaa" required minlength="3" autocomplete="username">
+            </div>
+            <div class="form-group-field">
+              <label><i class="fa-solid fa-envelope"></i> Email Address</label>
+              <input type="email" class="text-input" id="landingRegEmail" placeholder="student@example.com" required autocomplete="email">
+            </div>
+            <div class="form-group-field">
+              <label><i class="fa-solid fa-lock"></i> Create Password</label>
+              <input type="password" class="text-input" id="landingRegPassword" placeholder="Minimum 4 characters" required minlength="4" autocomplete="new-password">
+            </div>
+            <button type="submit" class="btn-primary auth-submit-btn register" id="btnLandingRegisterSubmit">
+              <i class="fa-solid fa-user-plus"></i> Create Free Account & Start
+            </button>
+          </form>
+
+          <!-- Guest Explore Link -->
+          <div class="auth-divider">
+            <span>or explore right away</span>
+          </div>
+          <button type="button" class="btn-secondary guest-btn" onclick="App.continueAsGuest()">
+            Continue as Guest &rarr;
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================
        SCREEN 1: TOPIC HUB (INITIAL HOME PAGE)
        ======================================================== -->
-  <div class="app-view active" id="view-topics">
+  <div class="app-view" id="view-topics">
     <div class="topics-hero">
       <h2>Interactive Coding Practice & Intelligent AI Tutor</h2>
       <p>Practice core computer science and algorithmic programming challenges from beginner to advanced. If your solution encounters a bug, CodeSense gives simple clues, explains what went wrong in plain English, and visualizes your program state!</p>
@@ -175,6 +303,22 @@
       </div>
     </div>
 
+    <!-- Difficulty Progression Roadmap & Filter Chips -->
+    <div class="difficulty-roadmap-guide">
+      <div class="diff-guide-chip active" data-filter="all" onclick="App.filterQuestionsByDifficulty('all')">
+        <i class="fa-solid fa-layer-group"></i> All 10 Levels
+      </div>
+      <div class="diff-guide-chip beg" data-filter="beginner" onclick="App.filterQuestionsByDifficulty('beginner')">
+        <span class="diff-chip-dot beg"></span> 🟢 Beginner (Levels 1–3)
+      </div>
+      <div class="diff-guide-chip mid" data-filter="intermediate" onclick="App.filterQuestionsByDifficulty('intermediate')">
+        <span class="diff-chip-dot mid"></span> 🟡 Intermediate (Levels 4–7)
+      </div>
+      <div class="diff-guide-chip adv" data-filter="advanced" onclick="App.filterQuestionsByDifficulty('advanced')">
+        <span class="diff-chip-dot adv"></span> 🔴 Advanced (Levels 8–10)
+      </div>
+    </div>
+
     <!-- 10 Questions Cards -->
     <div class="questions-container" id="questionsTrackContainer">
       <!-- Dynamically populated by app.js -->
@@ -185,13 +329,29 @@
        SCREEN 3: THE DEBUGGING WORKBENCH
        ======================================================== -->
   <div class="app-view" id="view-workbench">
-    <!-- Breadcrumb -->
-    <div class="breadcrumb-bar">
-      <button class="breadcrumb-btn" onclick="App.backToCurrentTopicQuestions()">
-        <i class="fa-solid fa-arrow-left"></i> <span id="workbenchTopicBackText">Back to Questions</span>
-      </button>
-      <span class="breadcrumb-sep">/</span>
-      <span class="breadcrumb-current" id="workbenchBreadcrumbTitle">Level 1: Challenge</span>
+    <!-- Breadcrumb & Level Switcher -->
+    <div class="breadcrumb-bar" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <button class="breadcrumb-btn" onclick="App.backToCurrentTopicQuestions()">
+          <i class="fa-solid fa-arrow-left"></i> <span id="workbenchTopicBackText">Back to Questions</span>
+        </button>
+        <span class="breadcrumb-sep">/</span>
+        <span class="breadcrumb-current" id="workbenchBreadcrumbTitle">Level 1: Challenge</span>
+        <span id="workbenchDiffBadge" class="q-level-badge beg" style="padding: 2px 8px; font-size: 0.72rem; border-radius: 4px;">Level 1 • Beginner</span>
+      </div>
+
+      <!-- Workbench Level Switcher Controls -->
+      <div id="workbenchLevelSwitcher" style="display: flex; align-items: center; gap: 6px;">
+        <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.76rem;" onclick="App.goToPrevLevel()" id="btnPrevLevel" title="Previous Difficulty Level">
+          <i class="fa-solid fa-chevron-left"></i> Prev Level
+        </button>
+        <select id="workbenchLevelDropdown" class="text-input" style="padding: 4px 10px; font-size: 0.76rem; width: auto; max-width: 280px; background: rgba(15,23,42,0.9); border: 1px solid var(--glass-border); color: #f8fafc; border-radius: 6px;" onchange="App.selectProblem(this.value)">
+          <!-- Populated dynamically with all 10 levels -->
+        </select>
+        <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.76rem;" onclick="App.goToNextLevel()" id="btnNextLevel" title="Next Difficulty Level">
+          Next Level <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
     </div>
 
     <!-- Split Workspace -->

@@ -30,7 +30,13 @@ const App = {
     await this.loadTopics();
     await this.fetchUserProgress();
     await this.updateProfileStats();
-    this.showTopicsView();
+
+    // Show Login page first before catalog if not logged in
+    if (this.currentUser) {
+      this.showTopicsView();
+    } else {
+      this.showAuthLandingView();
+    }
   },
 
   setupEventListeners() {
@@ -128,6 +134,136 @@ const App = {
   },
 
   // ========================================================
+  // VIEW 0: AUTHENTICATION LANDING SCREEN
+  // ========================================================
+  showAuthLandingView() {
+    this.currentView = "auth";
+    document.querySelectorAll(".app-view").forEach((v) => v.classList.remove("active"));
+    const view = document.getElementById("view-auth-landing");
+    if (view) view.classList.add("active");
+  },
+
+  switchLandingAuthTab(tab) {
+    const tabLogin = document.getElementById("landingTabLogin");
+    const tabReg = document.getElementById("landingTabRegister");
+    const formLogin = document.getElementById("landingLoginForm");
+    const formReg = document.getElementById("landingRegisterForm");
+    const title = document.getElementById("landingAuthTitle");
+    const statusMsg = document.getElementById("landingAuthStatusMsg");
+
+    if (statusMsg) statusMsg.style.display = "none";
+
+    if (tab === "login") {
+      tabLogin.classList.add("active");
+      tabReg.classList.remove("active");
+      formLogin.style.display = "block";
+      formReg.style.display = "none";
+      if (title) title.textContent = "Welcome to CodeSense";
+    } else {
+      tabReg.classList.add("active");
+      tabLogin.classList.remove("active");
+      formLogin.style.display = "none";
+      formReg.style.display = "block";
+      if (title) title.textContent = "Create Free Account";
+    }
+  },
+
+  async handleLandingLogin(e) {
+    e.preventDefault();
+    const identifier = document.getElementById("landingLoginIdentifier").value.trim();
+    const password = document.getElementById("landingLoginPassword").value;
+    const statusMsg = document.getElementById("landingAuthStatusMsg");
+    const submitBtn = document.getElementById("btnLandingLoginSubmit");
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Logging in...';
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier, password })
+      });
+      const data = await res.json();
+
+      if (data.success && data.user) {
+        this.currentUser = data.user;
+        this.currentUserId = data.user.username;
+        localStorage.setItem("codesense_user", JSON.stringify(data.user));
+        this.updateAuthUI();
+        this.showToast(`Welcome back, ${data.user.username}!`);
+        await this.fetchUserProgress();
+        await this.updateProfileStats();
+        this.showTopicsView();
+      } else {
+        statusMsg.style.display = "block";
+        statusMsg.style.background = "rgba(239, 68, 68, 0.15)";
+        statusMsg.style.border = "1px solid rgba(239, 68, 68, 0.3)";
+        statusMsg.style.color = "#fca5a5";
+        statusMsg.textContent = data.message || "Invalid username or password.";
+      }
+    } catch (err) {
+      statusMsg.style.display = "block";
+      statusMsg.textContent = "Network error. Please try again.";
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i> Log In to CodeSense';
+    }
+  },
+
+  async handleLandingRegister(e) {
+    e.preventDefault();
+    const username = document.getElementById("landingRegUsername").value.trim();
+    const email = document.getElementById("landingRegEmail").value.trim();
+    const password = document.getElementById("landingRegPassword").value;
+    const statusMsg = document.getElementById("landingAuthStatusMsg");
+    const submitBtn = document.getElementById("btnLandingRegisterSubmit");
+
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Creating Account...';
+
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, email, password })
+      });
+      const data = await res.json();
+
+      if (data.success && data.user) {
+        this.currentUser = data.user;
+        this.currentUserId = data.user.username;
+        localStorage.setItem("codesense_user", JSON.stringify(data.user));
+        this.updateAuthUI();
+        this.showToast(`Account created! Welcome, ${data.user.username}! 🎉`);
+        await this.fetchUserProgress();
+        await this.updateProfileStats();
+        this.showTopicsView();
+      } else {
+        statusMsg.style.display = "block";
+        statusMsg.style.background = "rgba(239, 68, 68, 0.15)";
+        statusMsg.style.border = "1px solid rgba(239, 68, 68, 0.3)";
+        statusMsg.style.color = "#fca5a5";
+        statusMsg.textContent = data.message || "Failed to create account.";
+      }
+    } catch (err) {
+      statusMsg.style.display = "block";
+      statusMsg.textContent = "Network error. Please try again.";
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Create Free Account & Start';
+    }
+  },
+
+  continueAsGuest() {
+    this.currentUser = null;
+    this.currentUserId = "student_1";
+    this.updateAuthUI();
+    this.showToast("Exploring as Guest. Log in anytime to save your streak!");
+    this.showTopicsView();
+  },
+
+  // ========================================================
   // VIEW 1: TOPIC HUB
   // ========================================================
   showTopicsView() {
@@ -180,6 +316,11 @@ const App = {
     document.querySelectorAll(".app-view").forEach((v) => v.classList.remove("active"));
     document.getElementById("view-questions").classList.add("active");
 
+    // Reset difficulty filter chips
+    document.querySelectorAll(".diff-guide-chip").forEach((c, idx) => {
+      c.classList.toggle("active", idx === 0);
+    });
+
     // Update banner
     document.getElementById("topicBreadcrumbTitle").textContent = this.currentTopic.name;
     document.getElementById("topicBannerTitle").textContent = this.currentTopic.name;
@@ -204,12 +345,16 @@ const App = {
       this.currentTopicProblems.forEach((p) => {
         const lvl = p.level || 1;
         const diffClass = lvl <= 3 ? "beg" : lvl <= 7 ? "mid" : "adv";
+        const diffLabel = lvl <= 3 ? "Beginner" : lvl <= 7 ? "Intermediate" : "Advanced";
         const isSolved = Boolean(this.solvedProblemsMap && this.solvedProblemsMap[p.id]);
 
         html += `
-          <div class="question-level-card ${isSolved ? 'is-solved' : ''}" onclick="App.selectProblem('${p.id}')">
-            <div class="q-level-badge ${diffClass}">
-              Level ${lvl}
+          <div class="question-level-card ${isSolved ? 'is-solved' : ''}" data-diff="${diffLabel.toLowerCase()}" onclick="App.selectProblem('${p.id}')">
+            <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-start; min-width: 90px;">
+              <div class="q-level-badge ${diffClass}">
+                Level ${lvl}
+              </div>
+              <span class="diff-badge-pill ${diffClass}">${diffLabel}</span>
             </div>
 
             <div class="q-info">
@@ -235,6 +380,20 @@ const App = {
       console.error(e);
       container.innerHTML = `<div style="color: #f87171;">Failed to load questions.</div>`;
     }
+  },
+
+  filterQuestionsByDifficulty(filter) {
+    document.querySelectorAll(".diff-guide-chip").forEach(chip => {
+      chip.classList.toggle("active", chip.getAttribute("data-filter") === filter);
+    });
+    document.querySelectorAll(".question-level-card").forEach(card => {
+      if (filter === "all") {
+        card.style.display = "flex";
+      } else {
+        const cardDiff = card.getAttribute("data-diff");
+        card.style.display = (cardDiff === filter) ? "flex" : "none";
+      }
+    });
   },
 
   backToCurrentTopicQuestions() {
@@ -275,6 +434,44 @@ const App = {
       document.getElementById("scenarioTag").textContent = data.scenario;
       document.getElementById("scenarioDescription").textContent = data.description;
       document.getElementById("expectedOutputText").textContent = data.expected_output;
+
+      // Ensure topic problems are loaded for dropdown & next/prev navigation
+      if (!this.currentTopicProblems || this.currentTopicProblems.length === 0 || (this.currentTopic && this.currentTopic.id !== data.topic_id)) {
+        try {
+          const tRes = await fetch(`/api/problems?topic_id=${data.topic_id}&language=${this.activeLanguage}`);
+          const tData = await tRes.json();
+          this.currentTopicProblems = tData.problems || [];
+        } catch (_) {}
+      }
+
+      // Update workbench difficulty badge and level switcher controls
+      const lvl = data.level || 1;
+      const diffLabel = lvl <= 3 ? "Beginner" : lvl <= 7 ? "Intermediate" : "Advanced";
+      const diffClass = lvl <= 3 ? "beg" : lvl <= 7 ? "mid" : "adv";
+
+      const diffBadge = document.getElementById("workbenchDiffBadge");
+      if (diffBadge) {
+        diffBadge.className = `q-level-badge ${diffClass}`;
+        diffBadge.textContent = `Level ${lvl} of 10 • ${diffLabel}`;
+      }
+
+      const dropdown = document.getElementById("workbenchLevelDropdown");
+      if (dropdown && this.currentTopicProblems && this.currentTopicProblems.length > 0) {
+        dropdown.innerHTML = this.currentTopicProblems.map(p => {
+          const pLvl = p.level || 1;
+          const pDiff = pLvl <= 3 ? "Beginner" : pLvl <= 7 ? "Intermediate" : "Advanced";
+          const isSolvedP = Boolean(this.solvedProblemsMap && this.solvedProblemsMap[p.id]);
+          const cleanTitle = p.title.replace(/^Level\s*\d+:\s*/, '');
+          return `<option value="${p.id}" ${p.id === data.id ? 'selected' : ''}>
+            Level ${pLvl}: ${cleanTitle} [${pDiff}] ${isSolvedP ? '✅' : ''}
+          </option>`;
+        }).join("");
+      }
+
+      const prevBtn = document.getElementById("btnPrevLevel");
+      const nextBtn = document.getElementById("btnNextLevel");
+      if (prevBtn) prevBtn.disabled = (lvl <= 1);
+      if (nextBtn) nextBtn.disabled = (lvl >= 10);
 
       // Check if problem is already solved (Review Mode)
       const isSolved = Boolean(this.solvedProblemsMap && this.solvedProblemsMap[data.id]);
@@ -323,6 +520,31 @@ const App = {
     } catch (e) {
       console.error(e);
       this.showToast("Failed to load challenge details.");
+    }
+  },
+
+  goToNextLevel() {
+    if (!this.currentProblem) return;
+    const currentLevel = this.currentProblem.level || 1;
+    if (!this.currentTopicProblems || this.currentTopicProblems.length === 0) {
+      this.backToCurrentTopicQuestions();
+      return;
+    }
+    const nextProb = this.currentTopicProblems.find(p => p.level === currentLevel + 1);
+    if (nextProb) {
+      this.selectProblem(nextProb.id);
+    } else {
+      this.showToast("🎉 You've conquered all 10 Levels for this topic!");
+      this.backToCurrentTopicQuestions();
+    }
+  },
+
+  goToPrevLevel() {
+    if (!this.currentProblem || !this.currentTopicProblems) return;
+    const currentLevel = this.currentProblem.level || 1;
+    const prevProb = this.currentTopicProblems.find(p => p.level === currentLevel - 1);
+    if (prevProb) {
+      this.selectProblem(prevProb.id);
     }
   },
 
@@ -618,11 +840,39 @@ const App = {
     // Render success banner with Expected and Actual output comparison
     const banner = document.getElementById("errorBannerContainer");
     if (banner) {
+      const currentLvl = (this.currentProblem && this.currentProblem.level) ? this.currentProblem.level : 1;
+      const nextProblem = this.currentTopicProblems ? this.currentTopicProblems.find(p => p.level === currentLvl + 1) : null;
+      let nextActionHtml = "";
+      if (nextProblem) {
+        const cleanTitle = nextProblem.title.replace(/^Level\s*\d+:\s*/, '');
+        nextActionHtml = `
+          <div style="margin-top: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <button class="btn-primary" onclick="App.goToNextLevel()" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 8px 18px; font-weight: 700; font-size: 0.86rem; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.4);">
+              <i class="fa-solid fa-circle-arrow-right"></i> Advance to Level ${nextProblem.level}: ${cleanTitle} &rarr;
+            </button>
+            <button class="btn-secondary" onclick="App.backToCurrentTopicQuestions()" style="padding: 8px 14px; font-size: 0.82rem;">
+              <i class="fa-solid fa-list-check"></i> View Topic Levels
+            </button>
+          </div>
+        `;
+      } else {
+        nextActionHtml = `
+          <div style="margin-top: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div style="color: #34d399; font-weight: 700; font-size: 0.9rem;">
+              🏆 Outstanding! You've mastered all 10 Levels in this topic!
+            </div>
+            <button class="btn-primary" onclick="App.showTopicsView()" style="padding: 8px 16px; font-size: 0.84rem;">
+              Choose Next Topic &rarr;
+            </button>
+          </div>
+        `;
+      }
+
       banner.innerHTML = `
         <div class="error-banner success">
           <div class="error-icon"><i class="fa-solid fa-circle-check"></i></div>
           <div class="error-meta" style="width: 100%;">
-            <div class="error-type-title">Awesome Job! Problem Solved!</div>
+            <div class="error-type-title">Awesome Job! Level ${currentLvl} Solved! 🎉</div>
             <div class="error-desc" style="margin-bottom: 8px;">Your code executed cleanly and produced the exact expected output.</div>
             ${expected ? `
               <div class="output-comparison-grid">
@@ -636,6 +886,7 @@ const App = {
                 </div>
               </div>
             ` : ''}
+            ${nextActionHtml}
           </div>
         </div>
       `;
@@ -1138,9 +1389,7 @@ ${tc.buggy_code}
     this.showToast("Logged out successfully.");
     this.fetchUserProgress();
     this.updateProfileStats();
-    if (this.currentTopic) {
-      this.showTopicQuestionsView(this.currentTopic.id);
-    }
+    this.showAuthLandingView();
   },
 
   async fetchUserProgress() {
