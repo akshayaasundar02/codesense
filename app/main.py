@@ -3,6 +3,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import re
 
 from app.config import STATIC_DIR, GROQ_MODEL, JAVA_EXEC
 from app.models import (
@@ -67,6 +68,94 @@ def get_problem(problem_id: str):
         raise HTTPException(status_code=404, detail="Problem not found")
     return problem
 
+# ----------------- OUTPUT MATCHING UTILITIES -----------------
+
+def normalize_output_text(text: str) -> str:
+    if not text:
+        return ""
+    t = text.strip()
+    t = re.sub(r'\s+', ' ', t)
+    t = re.sub(r'\s*,\s*', ', ', t)
+    t = re.sub(r'\[\s*', '[', t)
+    t = re.sub(r'\s*\]', ']', t)
+    t = re.sub(r'\(\s*', '(', t)
+    t = re.sub(r'\s*\)', ')', t)
+    return t
+
+def extract_match_candidates(text: str) -> set:
+    if not text:
+        return set()
+    cleaned = text.strip()
+    norm = normalize_output_text(cleaned)
+    candidates = {cleaned, norm, norm.lower()}
+    
+    if ':' in cleaned:
+        # Value portion after colon (e.g. "Reversed: [5, 4, 3, 2, 1]" -> "[5, 4, 3, 2, 1]")
+        parts = cleaned.split(':', 1)
+        val = parts[1].strip()
+        val_norm = normalize_output_text(val)
+        candidates.update([val, val_norm, val_norm.lower()])
+        
+        # Strip all label prefixes like "Min: 4, Max: 95" -> "4, 95"
+        stripped = re.sub(r'[A-Za-z0-9_\s-]+:\s*', '', cleaned).strip()
+        stripped_norm = normalize_output_text(stripped)
+        candidates.update([stripped, stripped_norm, stripped_norm.lower()])
+
+    return candidates
+
+def check_outputs_match(actual: str, expected: str) -> bool:
+    if not expected or not expected.strip():
+        return True
+    if not actual or not actual.strip():
+        return False
+        
+    actual_clean = actual.strip()
+    expected_clean = expected.strip()
+    
+    # 1. Direct or substring match
+    if expected_clean == actual_clean or expected_clean in actual_clean:
+        return True
+        
+    # 2. Normalized match
+    actual_norm = normalize_output_text(actual_clean)
+    expected_norm = normalize_output_text(expected_clean)
+    if expected_norm == actual_norm or expected_norm in actual_norm:
+        return True
+        
+    # 3. Candidate intersection (e.g. student output '[5, 4, 3, 2, 1]' vs expected 'Reversed: [5, 4, 3, 2, 1]')
+    exp_cands = extract_match_candidates(expected_clean)
+    act_cands = extract_match_candidates(actual_clean)
+    if exp_cands.intersection(act_cands):
+        return True
+        
+    # 4. Multi-line checks (e.g. prints in loops or debug prints before final result)
+    for line in actual_clean.splitlines():
+        line_clean = line.strip()
+        if not line_clean:
+            continue
+        line_cands = extract_match_candidates(line_clean)
+        if exp_cands.intersection(line_cands):
+            return True
+        for ec in exp_cands:
+            if ec and len(ec) > 3 and ec in line_clean:
+                return True
+                
+    # 5. Numeric equivalence (e.g. 1475 vs 1475.0, 4 vs 4.0)
+    for ec in exp_cands:
+        try:
+            exp_num = float(ec)
+            for ac in act_cands:
+                try:
+                    act_num = float(ac)
+                    if abs(exp_num - act_num) < 1e-6:
+                        return True
+                except (ValueError, TypeError):
+                    pass
+        except (ValueError, TypeError):
+            pass
+            
+    return False
+
 # ----------------- CODE EXECUTION & VISUALIZER -----------------
 
 @app.post("/api/execute", response_model=ExecuteResponse)
@@ -90,7 +179,7 @@ def execute_code_endpoint(req: ExecuteRequest):
 
     if problem and success:
         actual = stdout.strip()
-        if expected in actual or actual == expected:
+        if check_outputs_match(actual, expected):
             all_tests_passed = True
         else:
             all_tests_passed = False
@@ -101,7 +190,7 @@ def execute_code_endpoint(req: ExecuteRequest):
             )
     elif success and req.expected_output and req.expected_output.strip():
         actual = stdout.strip()
-        if expected in actual or actual == expected:
+        if check_outputs_match(actual, expected):
             all_tests_passed = True
         else:
             all_tests_passed = False
