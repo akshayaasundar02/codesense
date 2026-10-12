@@ -4,6 +4,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import os
 import re
+from typing import Optional, Dict, Any, List
 
 from app.config import STATIC_DIR, GROQ_MODEL, JAVA_EXEC
 from app.models import (
