@@ -876,6 +876,144 @@ ${tc.buggy_code}
       );
       anim.onfinish = () => conf.remove();
     }
+  },
+
+  openAutomationModal() {
+    const modal = document.getElementById("automationModal");
+    if (modal) modal.classList.add("active");
+  },
+
+  closeAutomationModal() {
+    const modal = document.getElementById("automationModal");
+    if (modal) modal.classList.remove("active");
+  },
+
+  handleCodeFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target.result;
+      const fileName = file.name.toLowerCase();
+      let lang = "python";
+      if (fileName.endsWith(".java")) {
+        lang = "java";
+      }
+
+      if (this.currentLanguage !== lang) {
+        this.switchLanguage(lang);
+      }
+
+      Editor.setValue(content);
+      this.showToast(`Uploaded ${file.name} successfully into workspace!`);
+
+      if (document.getElementById("view-topics").classList.contains("active")) {
+        this.openCustomPracticeView();
+      }
+    };
+    reader.readAsText(file);
+  },
+
+  async runStudentAutomationEvaluation() {
+    const display = document.getElementById("automationPipelineDisplay");
+    const stagesList = document.getElementById("pipelineStagesList");
+    const resultBox = document.getElementById("automationResultBox");
+    const statusPill = document.getElementById("automationStatusPill");
+    const btn = document.getElementById("btnRunAutomation");
+
+    if (!display || !stagesList || !resultBox) return;
+
+    display.style.display = "block";
+    statusPill.textContent = "Executing...";
+    statusPill.style.background = "rgba(56, 189, 248, 0.2)";
+    statusPill.style.color = "#38bdf8";
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Running n8n Pipeline...`;
+
+    const mockStages = [
+      { name: "1. Webhook Ingestion & Auth", desc: "Receiving submission from student client" },
+      { name: "2. Code AST & Security Sandbox", desc: "Sanitizing syntax & parsing AST tokens" },
+      { name: "3. AI Pedagogical Evaluation", desc: "Analyzing logic gap & misconceptions" },
+      { name: "4. Autonomous Decision Routing", desc: "Classifying mastery vs remedial need" },
+      { name: "5. Student DB Progress Record", desc: "Logging metrics to academic history" },
+      { name: "6. Dispatch Student Notification", desc: "Issuing personalized guidance feedback" }
+    ];
+
+    stagesList.innerHTML = mockStages.map(s => `
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 6px; font-size: 0.74rem;">
+        <div style="color: #94a3b8; font-weight: 600;"><i class="fa-solid fa-circle-notch fa-spin" style="margin-right: 6px; color: #38bdf8;"></i>${s.name}</div>
+        <div style="color: #64748b; font-size: 0.7rem; margin-top: 2px;">${s.desc}</div>
+      </div>
+    `).join("");
+
+    resultBox.innerHTML = `<div style="text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 12px;"><i class="fa-solid fa-brain fa-bounce" style="color: #a78bfa; margin-right: 8px;"></i> AI Model analyzing student code logic...</div>`;
+
+    const code = Editor.getValue();
+    const problemTitle = this.currentProblem ? this.currentProblem.title : "Custom Challenge";
+
+    try {
+      const res = await fetch("/api/automation/evaluate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          student_name: "Akshayaa",
+          student_email: "student@codesense.edu",
+          problem_title: problemTitle,
+          language: this.currentLanguage,
+          code: code,
+          hints_used: this.hintsUsed || 0,
+          api_key: this.groqApiKey || ""
+        })
+      });
+      const data = await res.json();
+
+      statusPill.textContent = "Completed";
+      statusPill.style.background = "rgba(16, 185, 129, 0.2)";
+      statusPill.style.color = "#4ade80";
+
+      stagesList.innerHTML = (data.pipeline_stages || []).map(s => `
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); padding: 8px 12px; border-radius: 6px; font-size: 0.74rem;">
+          <div style="color: #4ade80; font-weight: 600;"><i class="fa-solid fa-circle-check" style="margin-right: 6px;"></i>${s.stage}</div>
+          <div style="color: #cbd5e1; font-size: 0.7rem; margin-top: 2px;">${s.detail}</div>
+        </div>
+      `).join("");
+
+      const isPass = data.status === "Mastered";
+      const statusColor = isPass ? "#4ade80" : "#f59e0b";
+      const badgeIcon = isPass ? "fa-award" : "fa-lightbulb";
+
+      resultBox.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px; margin-bottom: 10px;">
+          <div>
+            <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Autonomy Score</span>
+            <div style="font-size: 1.4rem; font-weight: 800; color: ${statusColor};">${data.score}<span style="font-size: 0.8rem; color: var(--text-dim);">/100</span></div>
+          </div>
+          <div>
+            <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Status</span>
+            <div style="font-size: 0.95rem; font-weight: 700; color: ${statusColor};">${data.status}</div>
+          </div>
+          <div>
+            <span style="font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase;">Autonomy Badge</span>
+            <div style="font-size: 0.85rem; font-weight: 600; color: #a78bfa;"><i class="fa-solid ${badgeIcon}"></i> ${data.autonomy_badge}</div>
+          </div>
+        </div>
+        <div style="font-size: 0.8rem; line-height: 1.5; color: #cbd5e1;">
+          <p style="margin: 0 0 6px 0;"><strong>🧠 Concept Focus:</strong> ${data.core_concept}</p>
+          <p style="margin: 0 0 6px 0;"><strong>🔍 Logic Misconception:</strong> ${data.misconception_detected}</p>
+          <p style="margin: 0 0 6px 0;"><strong>🛠️ Recommended Action:</strong> ${data.recommended_action}</p>
+          <p style="margin: 0; color: #38bdf8;"><strong>📌 Next Practice Goal:</strong> ${data.next_recommended_topic}</p>
+        </div>
+      `;
+
+      if (isPass) this.launchConfetti();
+    } catch (err) {
+      statusPill.textContent = "Error";
+      resultBox.innerHTML = `<div style="color: #f87171; font-size: 0.8rem;">Evaluation failed: ${err.message}</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<i class="fa-solid fa-play"></i> Trigger Automation Engine`;
+    }
   }
 };
 

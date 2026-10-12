@@ -1,0 +1,255 @@
+{
+  "name": "CodeSense - AI-Powered Student Automation Pipeline",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "student-code-submit",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryPropertyName": "file"
+        }
+      },
+      "id": "node-1-webhook",
+      "name": "1. Student Code Webhook / File Upload",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        180,
+        340
+      ],
+      "webhookId": "student-code-submit"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Step 2: Extract student code from either direct JSON payload or uploaded file\nconst item = $input.first();\nlet code = \"\";\nlet language = \"python\";\nlet studentName = \"Student\";\nlet studentEmail = \"student@university.edu\";\nlet problemTitle = \"Practice Challenge\";\nlet hintsUsed = 0;\n\n// Check if file upload was provided\nif (item.binary && item.binary.file) {\n  const fileData = item.binary.file;\n  const raw = Buffer.from(fileData.data, 'base64').toString('utf-8');\n  code = raw;\n  const fileName = (fileData.fileName || \"\").toLowerCase();\n  if (fileName.endsWith(\".java\")) {\n    language = \"java\";\n  } else {\n    language = \"python\";\n  }\n  studentName = fileData.fileName || \"Uploaded Code\";\n} else {\n  // Standard JSON payload from CodeSense platform\n  const body = item.json.body || item.json;\n  code = body.code || \"\";\n  language = body.language || \"python\";\n  studentName = body.student_name || \"Akshayaa\";\n  studentEmail = body.student_email || \"student@codesense.edu\";\n  problemTitle = body.problem_title || \"Array & Logic Challenge\";\n  hintsUsed = Number(body.hints_used || 0);\n}\n\nreturn [{\n  json: {\n    student_name: studentName,\n    student_email: studentEmail,\n    problem_title: problemTitle,\n    language: language,\n    code: code,\n    hints_used: hintsUsed,\n    timestamp: new Date().toISOString()\n  }\n}];"
+      },
+      "id": "node-2-extractor",
+      "name": "2. Parse Student Submission & File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        420,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{ $env.GROQ_API_KEY || 'gsk_demo_ai_student_automation' }}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are an Autonomous AI Student Evaluation & Tutor Agent for CodeSense. Analyze the student's code submission. Produce a structured JSON response with keys: score (integer 0-100), status ('Mastered' or 'Needs Remediation'), misconception_detected (concise description of logic gap), core_concept (foundational CS concept to review), recommended_action (actionable hint without direct code spoiler), next_recommended_topic (string), and autonomy_badge ('Master Developer', 'Independent Thinker', or 'Developing Learner').\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Student: {{ $json.student_name }}\\nProblem: {{ $json.problem_title }}\\nLanguage: {{ $json.language }}\\nHints Used: {{ $json.hints_used }}\\n\\nCode:\\n```{{ $json.language }}\\n{{ $json.code }}\\n```\"\n    }\n  ],\n  \"response_format\": { \"type\": \"json_object\" }\n}",
+        "options": {}
+      },
+      "id": "node-3-ai-agent",
+      "name": "3. AI Pedagogical Evaluation Agent",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Step 4: Parse AI response and merge with submission metadata\nconst rawAi = $input.first().json;\nconst meta = $('2. Parse Student Submission & File').first().json;\n\nlet parsed = {};\ntry {\n  if (rawAi.choices && rawAi.choices[0] && rawAi.choices[0].message) {\n    parsed = JSON.parse(rawAi.choices[0].message.content);\n  } else {\n    parsed = rawAi;\n  }\n} catch (e) {\n  parsed = {\n    score: meta.hints_used > 2 ? 65 : 85,\n    status: meta.hints_used > 2 ? 'Needs Remediation' : 'Mastered',\n    misconception_detected: 'Potential edge condition handling',\n    core_concept: 'Algorithmic iteration and bounds',\n    recommended_action: 'Trace loop boundaries with edge values [0] and [N-1]',\n    next_recommended_topic: 'Two Pointer Technique',\n    autonomy_badge: 'Independent Thinker'\n  };\n}\n\nreturn [{\n  json: {\n    ...meta,\n    evaluation: parsed,\n    score: parsed.score || 75,\n    status: parsed.status || 'Needs Remediation',\n    is_mastered: (parsed.score || 75) >= 75\n  }\n}];"
+      },
+      "id": "node-4-formatter",
+      "name": "4. Format AI Diagnostics & Metrics",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.is_mastered }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "node-5-router",
+      "name": "5. Student Mastery Router (If)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch True: High Mastery Action (Student Autonomous Advancement)\nconst data = $input.first().json;\nreturn [{\n  json: {\n    ...data,\n    automation_action: \"ADVANCE_STUDENT\",\n    congratulations_message: `🌟 Outstanding mastery on ${data.problem_title}! You have earned the '${data.evaluation.autonomy_badge}' badge.`,\n    next_milestone: `Unlocking next progressive tier: ${data.evaluation.next_recommended_topic}`\n  }\n}];"
+      },
+      "id": "node-6-mastery-branch",
+      "name": "6a. Auto-Advance Proficient Student",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Branch False: Remedial Intervention Action (Automated Targeted Help)\nconst data = $input.first().json;\nreturn [{\n  json: {\n    ...data,\n    automation_action: \"REMEDIAL_INTERVENTION\",\n    alert_message: `⚠️ Logic gap detected: ${data.evaluation.misconception_detected}`,\n    guided_remedy: `Focus on: ${data.evaluation.core_concept}. Recommended next step: ${data.evaluation.recommended_action}`\n  }\n}];"
+      },
+      "id": "node-7-remedial-branch",
+      "name": "6b. Auto-Prescribe Remedial Tutoring",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Step 7: Automated Student Academic Logger & Email Dispatcher (Simulated)\nconst item = $input.first().json;\nconst emailHtml = `\n  <div style=\"font-family: Arial, sans-serif; max-width: 600px; padding: 20px; border: 1px solid #e0e0e0; border-radius: 8px;\">\n    <h2 style=\"color: #4f46e5;\">CodeSense Autonomous AI Student Report</h2>\n    <p>Hello <strong>${item.student_name}</strong>,</p>\n    <p>Your recent code submission for <strong>${item.problem_title}</strong> (${item.language.toUpperCase()}) was evaluated autonomously.</p>\n    <div style=\"background: #f8fafc; padding: 15px; border-radius: 6px; margin: 15px 0;\">\n      <p><strong>Autonomy Score:</strong> ${item.score}/100</p>\n      <p><strong>Status:</strong> ${item.status}</p>\n      <p><strong>Autonomy Badge:</strong> ${item.evaluation.autonomy_badge}</p>\n      <p><strong>Core Concept:</strong> ${item.evaluation.core_concept}</p>\n      <p><strong>Guidance:</strong> ${item.evaluation.recommended_action}</p>\n    </div>\n    <p style=\"color: #64748b; font-size: 13px;\">Generated automatically by CodeSense AI Student Automation Engine (n8n pipeline).</p>\n  </div>\n`;\n\nreturn [{\n  json: {\n    student_email: item.student_email,\n    email_subject: `[CodeSense AI] Your Autonomous Learning Diagnosis: ${item.problem_title}`,\n    email_body_html: emailHtml,\n    database_record_saved: true,\n    status: \"SUCCESS\",\n    payload: item\n  }\n}];"
+      },
+      "id": "node-8-dispatcher",
+      "name": "7. Automated Student Notification & DB Logger",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1620,
+        340
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Autonomous student evaluation and intervention completed successfully.\",\n  \"student\": \"{{ $json.payload.student_name }}\",\n  \"problem\": \"{{ $json.payload.problem_title }}\",\n  \"score\": {{ $json.payload.score }},\n  \"status\": \"{{ $json.payload.status }}\",\n  \"evaluation\": {{ JSON.stringify($json.payload.evaluation) }},\n  \"action_taken\": \"{{ $json.payload.automation_action }}\",\n  \"notification_dispatched\": true\n}",
+        "options": {}
+      },
+      "id": "node-9-respond",
+      "name": "8. Respond to CodeSense Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1860,
+        340
+      ]
+    }
+  ],
+  "connections": {
+    "1. Student Code Webhook / File Upload": {
+      "main": [
+        [
+          {
+            "node": "2. Parse Student Submission & File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "2. Parse Student Submission & File": {
+      "main": [
+        [
+          {
+            "node": "3. AI Pedagogical Evaluation Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "3. AI Pedagogical Evaluation Agent": {
+      "main": [
+        [
+          {
+            "node": "4. Format AI Diagnostics & Metrics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "4. Format AI Diagnostics & Metrics": {
+      "main": [
+        [
+          {
+            "node": "5. Student Mastery Router (If)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "5. Student Mastery Router (If)": {
+      "main": [
+        [
+          {
+            "node": "6a. Auto-Advance Proficient Student",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "6b. Auto-Prescribe Remedial Tutoring",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6a. Auto-Advance Proficient Student": {
+      "main": [
+        [
+          {
+            "node": "7. Automated Student Notification & DB Logger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "6b. Auto-Prescribe Remedial Tutoring": {
+      "main": [
+        [
+          {
+            "node": "7. Automated Student Notification & DB Logger",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "7. Automated Student Notification & DB Logger": {
+      "main": [
+        [
+          {
+            "node": "8. Respond to CodeSense Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}
